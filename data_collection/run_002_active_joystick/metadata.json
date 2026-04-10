@@ -1,0 +1,334 @@
+{
+  "run_name": "Run 002 \u2014 Active Joystick Input",
+  "description": "Active joystick movement (left stick all directions) and A button presses. 30-second recording for decoder training data.",
+  "h5_filename": "broadband_data_20260410_143032.h5",
+  "session_start": "2026-04-10T14:30:32.264591",
+  "sample_rate_hz": 32000,
+  "duration_seconds": 20.69,
+  "total_samples": 662029,
+  "total_channels": 35,
+  "neural_channels": 32,
+  "label_channels": 3,
+  "label_channel_roles": {
+    "32": "joystick axis (continuous)",
+    "33": "joystick axis (continuous)",
+    "34": "button (binary)"
+  },
+  "channel_stats": [
+    {
+      "channel": 0,
+      "electrode_id": 0,
+      "min": -352,
+      "max": 121,
+      "mean": -1.33,
+      "std": 24.85,
+      "unique_values": 445
+    },
+    {
+      "channel": 1,
+      "electrode_id": 1,
+      "min": -346,
+      "max": 111,
+      "mean": -1.34,
+      "std": 24.87,
+      "unique_values": 449
+    },
+    {
+      "channel": 2,
+      "electrode_id": 2,
+      "min": -344,
+      "max": 111,
+      "mean": -1.22,
+      "std": 24.1,
+      "unique_values": 446
+    },
+    {
+      "channel": 3,
+      "electrode_id": 3,
+      "min": -343,
+      "max": 112,
+      "mean": -1.35,
+      "std": 24.83,
+      "unique_values": 444
+    },
+    {
+      "channel": 4,
+      "electrode_id": 4,
+      "min": -348,
+      "max": 109,
+      "mean": -1.3,
+      "std": 24.68,
+      "unique_values": 439
+    },
+    {
+      "channel": 5,
+      "electrode_id": 5,
+      "min": -341,
+      "max": 121,
+      "mean": -1.4,
+      "std": 25.19,
+      "unique_values": 449
+    },
+    {
+      "channel": 6,
+      "electrode_id": 6,
+      "min": -346,
+      "max": 127,
+      "mean": -1.28,
+      "std": 24.64,
+      "unique_values": 447
+    },
+    {
+      "channel": 7,
+      "electrode_id": 7,
+      "min": -351,
+      "max": 111,
+      "mean": -1.24,
+      "std": 24.39,
+      "unique_values": 444
+    },
+    {
+      "channel": 8,
+      "electrode_id": 8,
+      "min": -338,
+      "max": 117,
+      "mean": -1.21,
+      "std": 24.19,
+      "unique_values": 441
+    },
+    {
+      "channel": 9,
+      "electrode_id": 9,
+      "min": -343,
+      "max": 115,
+      "mean": -1.1,
+      "std": 23.21,
+      "unique_values": 442
+    },
+    {
+      "channel": 10,
+      "electrode_id": 10,
+      "min": -344,
+      "max": 111,
+      "mean": -1.24,
+      "std": 24.33,
+      "unique_values": 448
+    },
+    {
+      "channel": 11,
+      "electrode_id": 11,
+      "min": -334,
+      "max": 111,
+      "mean": -1.14,
+      "std": 23.75,
+      "unique_values": 441
+    },
+    {
+      "channel": 12,
+      "electrode_id": 12,
+      "min": -353,
+      "max": 122,
+      "mean": -1.24,
+      "std": 24.21,
+      "unique_values": 447
+    },
+    {
+      "channel": 13,
+      "electrode_id": 13,
+      "min": -344,
+      "max": 111,
+      "mean": -1.27,
+      "std": 24.58,
+      "unique_values": 445
+    },
+    {
+      "channel": 14,
+      "electrode_id": 14,
+      "min": -343,
+      "max": 115,
+      "mean": -1.31,
+      "std": 24.65,
+      "unique_values": 444
+    },
+    {
+      "channel": 15,
+      "electrode_id": 15,
+      "min": -340,
+      "max": 117,
+      "mean": -1.36,
+      "std": 24.86,
+      "unique_values": 442
+    },
+    {
+      "channel": 16,
+      "electrode_id": 16,
+      "min": -349,
+      "max": 111,
+      "mean": -1.3,
+      "std": 24.72,
+      "unique_values": 447
+    },
+    {
+      "channel": 17,
+      "electrode_id": 17,
+      "min": -348,
+      "max": 123,
+      "mean": -1.37,
+      "std": 25.09,
+      "unique_values": 451
+    },
+    {
+      "channel": 18,
+      "electrode_id": 18,
+      "min": -347,
+      "max": 118,
+      "mean": -1.39,
+      "std": 25.34,
+      "unique_values": 446
+    },
+    {
+      "channel": 19,
+      "electrode_id": 19,
+      "min": -343,
+      "max": 110,
+      "mean": -1.47,
+      "std": 25.65,
+      "unique_values": 444
+    },
+    {
+      "channel": 20,
+      "electrode_id": 20,
+      "min": -351,
+      "max": 107,
+      "mean": -1.67,
+      "std": 26.93,
+      "unique_values": 443
+    },
+    {
+      "channel": 21,
+      "electrode_id": 21,
+      "min": -344,
+      "max": 118,
+      "mean": -1.79,
+      "std": 27.41,
+      "unique_values": 453
+    },
+    {
+      "channel": 22,
+      "electrode_id": 22,
+      "min": -344,
+      "max": 122,
+      "mean": -1.76,
+      "std": 27.52,
+      "unique_values": 450
+    },
+    {
+      "channel": 23,
+      "electrode_id": 23,
+      "min": -340,
+      "max": 125,
+      "mean": -1.72,
+      "std": 27.06,
+      "unique_values": 444
+    },
+    {
+      "channel": 24,
+      "electrode_id": 24,
+      "min": -349,
+      "max": 113,
+      "mean": -1.68,
+      "std": 26.81,
+      "unique_values": 447
+    },
+    {
+      "channel": 25,
+      "electrode_id": 25,
+      "min": -354,
+      "max": 119,
+      "mean": -1.82,
+      "std": 27.61,
+      "unique_values": 450
+    },
+    {
+      "channel": 26,
+      "electrode_id": 26,
+      "min": -344,
+      "max": 121,
+      "mean": -1.73,
+      "std": 26.98,
+      "unique_values": 446
+    },
+    {
+      "channel": 27,
+      "electrode_id": 27,
+      "min": -343,
+      "max": 119,
+      "mean": -1.6,
+      "std": 26.41,
+      "unique_values": 448
+    },
+    {
+      "channel": 28,
+      "electrode_id": 28,
+      "min": -344,
+      "max": 119,
+      "mean": -1.69,
+      "std": 26.97,
+      "unique_values": 450
+    },
+    {
+      "channel": 29,
+      "electrode_id": 29,
+      "min": -346,
+      "max": 117,
+      "mean": -1.68,
+      "std": 26.76,
+      "unique_values": 451
+    },
+    {
+      "channel": 30,
+      "electrode_id": 30,
+      "min": -343,
+      "max": 114,
+      "mean": -1.53,
+      "std": 26.12,
+      "unique_values": 446
+    },
+    {
+      "channel": 31,
+      "electrode_id": 31,
+      "min": -341,
+      "max": 122,
+      "mean": -1.37,
+      "std": 25.06,
+      "unique_values": 441
+    },
+    {
+      "channel": 32,
+      "electrode_id": 32,
+      "min": -32767,
+      "max": 32767,
+      "mean": 95.86,
+      "std": 19044.87,
+      "unique_values": 250
+    },
+    {
+      "channel": 33,
+      "electrode_id": 33,
+      "min": -32767,
+      "max": 32767,
+      "mean": -3477.98,
+      "std": 20570.48,
+      "unique_values": 253
+    },
+    {
+      "channel": 34,
+      "electrode_id": 34,
+      "min": 0,
+      "max": 32767,
+      "mean": 448.23,
+      "std": 3806.06,
+      "unique_values": 2
+    }
+  ]
+}

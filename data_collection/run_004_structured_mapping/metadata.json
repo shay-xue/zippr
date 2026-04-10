@@ -1,0 +1,88 @@
+{
+  "run_name": "Run 004 \u2014 Structured Channel Mapping",
+  "description": "60-second recording with one input at a time (5s each) to map label channels to controller inputs.",
+  "h5_filename": "broadband_data_20260410_151848.h5",
+  "session_start": "2026-04-10T15:18:48.657213",
+  "sample_rate_hz": 32000,
+  "duration_seconds": 27.23,
+  "total_samples": 871500,
+  "total_channels": 76,
+  "packet_loss_percent": 55.4,
+  "channel_mapping": {
+    "Left Stick X": {
+      "channel": 64,
+      "confidence": 0.816,
+      "activity": 1.0
+    },
+    "Left Stick Y": {
+      "channel": 64,
+      "confidence": 0.408,
+      "activity": 1.0
+    },
+    "Right Stick X": {
+      "channel": 65,
+      "confidence": 0.769,
+      "activity": 1.0
+    },
+    "Right Stick Y": {
+      "channel": 66,
+      "confidence": 0.502,
+      "activity": 1.0
+    },
+    "A Button": {
+      "channel": 66,
+      "confidence": 0.0,
+      "activity": 1.0
+    },
+    "B Button": {
+      "channel": 68,
+      "confidence": 0.188,
+      "activity": 1.0
+    },
+    "X Button": {
+      "channel": 68,
+      "confidence": 0.0,
+      "activity": 1.0
+    },
+    "Y Button": {
+      "channel": 70,
+      "confidence": 0.0,
+      "activity": 1.0
+    },
+    "Left Trigger": {
+      "channel": 71,
+      "confidence": 0.0,
+      "activity": 1.0
+    },
+    "Right Trigger": {
+      "channel": 72,
+      "confidence": 0.0,
+      "activity": 1.0
+    },
+    "Left Bumper": {
+      "channel": 73,
+      "confidence": 1.0,
+      "activity": 1.0
+    },
+    "Right Bumper": {
+      "channel": 73,
+      "confidence": 1.0,
+      "activity": 1.0
+    }
+  },
+  "input_sequence": [
+    "Left Stick X",
+    "Left Stick Y",
+    "Right Stick X",
+    "Right Stick Y",
+    "A Button",
+    "B Button",
+    "X Button",
+    "Y Button",
+    "Left Trigger",
+    "Right Trigger",
+    "Left Bumper",
+    "Right Bumper"
+  ],
+  "segment_duration_seconds": 5
+}

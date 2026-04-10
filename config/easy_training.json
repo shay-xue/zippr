@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "type": "kBroadbandSource",
+      "id": 1,
+      "broadbandSource": {
+        "peripheralId": 104,
+        "bitWidth": 12,
+        "sampleRateHz": 32000,
+        "gain": 1.0,
+        "signal": {
+          "electrode": {
+            "channels": [
+              {"id": 0, "electrodeId": 0},
+              {"id": 1, "electrodeId": 1},
+              {"id": 2, "electrodeId": 2},
+              {"id": 3, "electrodeId": 3},
+              {"id": 4, "electrodeId": 4},
+              {"id": 5, "electrodeId": 5},
+              {"id": 6, "electrodeId": 6},
+              {"id": 7, "electrodeId": 7},
+              {"id": 8, "electrodeId": 8},
+              {"id": 9, "electrodeId": 9},
+              {"id": 10, "electrodeId": 10},
+              {"id": 11, "electrodeId": 11},
+              {"id": 12, "electrodeId": 12},
+              {"id": 13, "electrodeId": 13},
+              {"id": 14, "electrodeId": 14},
+              {"id": 15, "electrodeId": 15},
+              {"id": 16, "electrodeId": 16},
+              {"id": 17, "electrodeId": 17},
+              {"id": 18, "electrodeId": 18},
+              {"id": 19, "electrodeId": 19},
+              {"id": 20, "electrodeId": 20},
+              {"id": 21, "electrodeId": 21},
+              {"id": 22, "electrodeId": 22},
+              {"id": 23, "electrodeId": 23},
+              {"id": 24, "electrodeId": 24},
+              {"id": 25, "electrodeId": 25},
+              {"id": 26, "electrodeId": 26},
+              {"id": 27, "electrodeId": 27},
+              {"id": 28, "electrodeId": 28},
+              {"id": 29, "electrodeId": 29},
+              {"id": 30, "electrodeId": 30},
+              {"id": 31, "electrodeId": 31},
+              {"id": 32, "electrodeId": 32},
+              {"id": 33, "electrodeId": 33}
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

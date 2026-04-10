@@ -1,0 +1,154 @@
+{
+  "run_name": "Run 005 \u2014 Individual Input Mapping",
+  "description": "12 separate 5-second recordings, one per controller input, for definitive channel mapping.",
+  "files": [
+    {
+      "file": "broadband_data_20260410_153221.h5",
+      "input": "Left Stick X",
+      "samples": 140865,
+      "duration": 4.4
+    },
+    {
+      "file": "broadband_data_20260410_153232.h5",
+      "input": "Left Stick Y",
+      "samples": 98234,
+      "duration": 3.07
+    },
+    {
+      "file": "broadband_data_20260410_153243.h5",
+      "input": "Right Stick X",
+      "samples": 156599,
+      "duration": 4.89
+    },
+    {
+      "file": "broadband_data_20260410_153254.h5",
+      "input": "Right Stick Y",
+      "samples": 158089,
+      "duration": 4.94
+    },
+    {
+      "file": "broadband_data_20260410_153305.h5",
+      "input": "A Button",
+      "samples": 166125,
+      "duration": 5.19
+    },
+    {
+      "file": "broadband_data_20260410_153316.h5",
+      "input": "B Button",
+      "samples": 84493,
+      "duration": 2.64
+    },
+    {
+      "file": "broadband_data_20260410_153328.h5",
+      "input": "X Button",
+      "samples": 94009,
+      "duration": 2.94
+    },
+    {
+      "file": "broadband_data_20260410_153339.h5",
+      "input": "Y Button",
+      "samples": 67353,
+      "duration": 2.1
+    },
+    {
+      "file": "broadband_data_20260410_153353.h5",
+      "input": "Left Trigger",
+      "samples": 151914,
+      "duration": 4.75
+    },
+    {
+      "file": "broadband_data_20260410_153403.h5",
+      "input": "Right Trigger",
+      "samples": 143163,
+      "duration": 4.47
+    },
+    {
+      "file": "broadband_data_20260410_153413.h5",
+      "input": "Left Bumper",
+      "samples": 128981,
+      "duration": 4.03
+    },
+    {
+      "file": "broadband_data_20260410_153428.h5",
+      "input": "Right Bumper",
+      "samples": 152340,
+      "duration": 4.76
+    }
+  ],
+  "channel_mapping": {
+    "Left Stick X": {
+      "channel": 64,
+      "activity": 1.0,
+      "confidence": 0.4588,
+      "runner_up": 65
+    },
+    "Left Stick Y": {
+      "channel": 65,
+      "activity": 1.0,
+      "confidence": 0.5412,
+      "runner_up": 64
+    },
+    "Right Stick X": {
+      "channel": 66,
+      "activity": 1.0,
+      "confidence": 0.7177,
+      "runner_up": 67
+    },
+    "Right Stick Y": {
+      "channel": 67,
+      "activity": 1.0,
+      "confidence": 0.6745,
+      "runner_up": 66
+    },
+    "A Button": {
+      "channel": 68,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    },
+    "B Button": {
+      "channel": 69,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    },
+    "X Button": {
+      "channel": 70,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    },
+    "Y Button": {
+      "channel": 71,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    },
+    "Left Trigger": {
+      "channel": 74,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    },
+    "Right Trigger": {
+      "channel": 75,
+      "activity": 1.0,
+      "confidence": 0.0,
+      "runner_up": 74
+    },
+    "Left Bumper": {
+      "channel": 72,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    },
+    "Right Bumper": {
+      "channel": 73,
+      "activity": 1.0,
+      "confidence": 1.0,
+      "runner_up": 75
+    }
+  },
+  "sample_rate_hz": 32000,
+  "mode": "Hard Training (Peripheral 108)"
+}

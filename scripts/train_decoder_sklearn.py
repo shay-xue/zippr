@@ -7,7 +7,8 @@ per sliding window, trains an MLPClassifier over 12 action classes,
 and exports to ONNX via skl2onnx.
 
 Usage:
-    python scripts/train_decoder_sklearn.py --data path/to/broadband.h5
+    uv run python scripts/train_decoder_sklearn.py --data data_collection/broadband_data_20260410_142940.h5
+Loading data_collection/broadband_data_20260410_142940.h5 
     python scripts/train_decoder_sklearn.py --data path/to/broadband.h5 --output models/decoder.onnx
 """
 
@@ -150,6 +151,66 @@ def window_labels(classes: np.ndarray, window_samples: int, stride_samples: int)
 
 # ── Load + preprocess ─────────────────────────────────────────────────────────
 
+def _read_h5(f: h5py.File):
+    """
+    Parse an HDF5 recording regardless of layout.
+
+    Supported layouts:
+      A) Separate datasets: f["neural"] (32×N) + f["labels"] (3×N)
+      B) Single dataset:    f["data"] or f["broadband"] (35×N)
+         — first 32 rows are neural, last 3 are labels
+      C) Transposed single: shape (N, 35) — auto-transposed
+
+    Returns:
+        neural      : (32, N) float32
+        labels      : (3,  N) float32
+        sample_rate : int
+    """
+    sr_candidates = ["sample_rate", "sample_rate_hz", "fs", "samplerate", "Fs"]
+    sample_rate = None
+    for key in sr_candidates:
+        if key in f.attrs:
+            sample_rate = int(f.attrs[key])
+            break
+    if sample_rate is None:
+        sample_rate = 32000
+        print(f"  [warn] sample_rate not found in attrs, defaulting to {sample_rate} Hz")
+
+    # NWB layout (science-synapse): acquisition/ElectricalSeries is a flat
+    # 1-D array of interleaved samples: (n_samples * n_channels,)
+    if "acquisition" in f and "ElectricalSeries" in f["acquisition"]:
+        raw = f["acquisition"]["ElectricalSeries"][()].astype(np.float32)
+        n_channels = len(f["general"]["extracellular_ephys"]["electrodes"]["id"])
+        n_samples  = len(f["acquisition"]["sequence_number"])
+        arr = raw.reshape(n_samples, n_channels).T   # (n_channels, n_samples)
+        n_neural = n_channels - 3
+        return arr[:n_neural], arr[n_neural:], sample_rate
+
+    # Separate neural / labels datasets
+    if "neural" in f and "labels" in f:
+        neural = f["neural"][:].astype(np.float32)
+        labels = f["labels"][:].astype(np.float32)
+        if neural.ndim == 2 and neural.shape[0] > neural.shape[1]:
+            neural = neural.T
+        if labels.ndim == 2 and labels.shape[0] > labels.shape[1]:
+            labels = labels.T
+        return neural, labels, sample_rate
+
+    # Single combined array
+    for key in ("data", "broadband", "raw", "recording"):
+        if key in f:
+            arr = f[key][:].astype(np.float32)
+            if arr.ndim == 2 and arr.shape[0] > arr.shape[1]:
+                arr = arr.T
+            n_neural = arr.shape[0] - 3
+            return arr[:n_neural], arr[n_neural:], sample_rate
+
+    raise KeyError(
+        f"Could not find neural data in {f.filename}. "
+        f"Top-level keys: {list(f.keys())}."
+    )
+
+
 def load_recording(h5_path: str, window_ms: int = 50, stride_ms: int = 25):
     """
     Load easy-mode HDF5 recording and return feature matrix + labels.
@@ -160,9 +221,7 @@ def load_recording(h5_path: str, window_ms: int = 50, stride_ms: int = 25):
     """
     print(f"Loading {h5_path} ...")
     with h5py.File(h5_path, "r") as f:
-        neural = f["neural"][:].astype(np.float32)   # (32, n_samples)
-        labels = f["labels"][:].astype(np.float32)   # (3,  n_samples)
-        sample_rate = int(f.attrs["sample_rate"])
+        neural, labels, sample_rate = _read_h5(f)
 
     print(f"  Neural: {neural.shape}  Labels: {labels.shape}  SR: {sample_rate} Hz")
 
@@ -249,7 +308,7 @@ def export_onnx(model: Pipeline, n_features: int, output_path: str):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train sklearn MLP decoder (easy mode)")
-    parser.add_argument("--data",   "-d", required=True, help="HDF5 recording file")
+    parser.add_argument("--data",   "-d", required=True, nargs="+", help="HDF5 recording file(s)")
     parser.add_argument("--output", "-o", default="models/decoder.onnx", help="Output ONNX path")
     parser.add_argument("--window-ms", type=int, default=50,  help="Window size in ms")
     parser.add_argument("--stride-ms", type=int, default=25,  help="Stride in ms")
@@ -258,7 +317,14 @@ def parse_args():
 
 def main():
     args = parse_args()
-    X, y = load_recording(args.data, args.window_ms, args.stride_ms)
+    all_X, all_y = [], []
+    for path in args.data:
+        X, y = load_recording(path, args.window_ms, args.stride_ms)
+        all_X.append(X)
+        all_y.append(y)
+    X = np.concatenate(all_X, axis=0)
+    y = np.concatenate(all_y, axis=0)
+    print(f"\nTotal windows across all files: {len(y)}")
     model = train(X, y)
     export_onnx(model, X.shape[1], args.output)
 

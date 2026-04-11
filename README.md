@@ -36,6 +36,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+With `uv`, you can install the root project environment directly:
+
+```bash
+uv sync
+```
+
 ### SciFi Device Setup
 ```bash
 # Discover device
@@ -68,6 +74,68 @@ python scripts/train_decoder.py --data data/recordings/ --output models/decoder.
 ├── game/               # Game application
 └── arm/                # Robotic arm control
 ```
+
+## Arm Control
+
+The `arm/` package contains the SO-101 follower arm control path used for hardware validation.
+
+### Local arm config
+
+Create `arm/local_config.py` for machine-specific settings such as the serial port:
+
+```python
+from arm.config import ArmSettings
+
+SETTINGS = ArmSettings(
+    port="/dev/tty.usbmodem0000001",
+    robot_id="so101-local",
+)
+```
+
+`arm/local_config.py` is gitignored so local hardware details stay out of the repo.
+
+### Keyboard teleop
+
+Run the phase-1 joint-space teleop loop with:
+
+```bash
+uv run arm-keyboard-teleop
+```
+
+### Browser teleop server
+
+If you want a local server you can drive from a browser keyboard page, run:
+
+```bash
+uv run arm-web-teleop
+```
+
+Then open `http://127.0.0.1:8765` in a browser, click the page to focus it, and use the same keys.
+The server binds only to `127.0.0.1`.
+
+### Scan connected motor IDs
+
+To check which motor IDs respond on the configured serial port:
+
+```bash
+uv run arm-check-motor-ids
+```
+
+Or scan a specific port directly:
+
+```bash
+uv run arm-check-motor-ids --port /dev/tty.usbmodem0000001
+```
+
+Default bindings:
+- `q/a`: shoulder pan
+- `w/s`: shoulder lift
+- `e/d`: elbow flex
+- `r/f`: wrist flex
+- `t/g`: wrist roll
+- `y/h`: gripper open/close
+- `space`: freeze current target
+- `esc`: exit cleanly
 
 ## Resources
 - [SciFi Docs](https://science.xyz/docs/d/scifi1/index)

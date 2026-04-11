@@ -1,0 +1,37 @@
+[project]
+name = "science-neurotech"
+version = "0.1.0"
+description = "BCI decoder, Synapse app, game, and SO-101 arm control for Global NeuroHack 2026."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "science-synapse>=2.2.7",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "torch>=2.0.0",
+    "onnx>=1.14.0",
+    "onnxruntime>=1.15.0",
+    "scikit-learn>=1.3.0",
+    "matplotlib>=3.7.0",
+    "h5py>=3.9.0",
+    "protobuf>=4.23.0",
+    "pygame>=2.5.0",
+    "lerobot",
+    "pynput>=1.7.0",
+    "feetech-servo-sdk>=1.0.0",
+]
+
+[project.scripts]
+arm-keyboard-teleop = "arm.keyboard_teleop:main"
+arm-web-teleop = "arm.web_teleop_server:main"
+arm-check-motor-ids = "arm.motor_id_check:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["arm*"]

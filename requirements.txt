@@ -9,3 +9,5 @@ matplotlib>=3.7.0
 h5py>=3.9.0
 protobuf>=4.23.0
 pygame>=2.5.0
+lerobot
+pynput>=1.7.0

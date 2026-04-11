@@ -112,6 +112,43 @@ uv run arm-web-teleop
 
 Then open `http://127.0.0.1:8765` in a browser, click the page to focus it, and use the same keys.
 The server binds only to `127.0.0.1`.
+The page shows live arm connection status and any startup error, and teleop startup skips interactive calibration unless you set `calibrate_on_connect=True`.
+
+### FastAPI command server
+
+If you want to send abstract end-effector delta commands over HTTP, run:
+
+```bash
+uv run arm-api-server --dry-run
+```
+
+For real hardware, make sure `arm/local_config.py` contains the serial `port`, and place a local
+copy of `so101.urdf` at `models/so101.urdf` or pass it explicitly:
+
+```bash
+uv run arm-api-server --urdf-path models/so101.urdf
+```
+
+Then open `http://127.0.0.1:8000/` in a browser, click the page to focus it, and use:
+- `w/s`: positive/negative forward reach `dx`
+- `a/d`: negative/positive shoulder pan `dy` in radians
+- `i/k`: positive/negative `dz`
+- `j/l`: negative/positive `d_rot`
+- `t/g`: open/close gripper via `d_jaw`
+
+The UI sends repeated `POST /api/end-effector-delta` requests while keys are held and lets you tune
+the reach/z, shoulder-pan, roll, jaw, and repeat-step sizes from the page.
+
+Example commands:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/api/joints
+curl http://127.0.0.1:8000/api/pose
+curl -X POST http://127.0.0.1:8000/api/end-effector-delta \
+  -H 'Content-Type: application/json' \
+  -d '{"dx": -0.01, "dy": 0.1, "dz": 0.01, "d_rot": 5.0, "d_jaw": 0.0}'
+```
 
 ### Scan connected motor IDs
 

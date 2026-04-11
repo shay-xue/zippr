@@ -22,15 +22,34 @@ def _default_step_sizes() -> dict[str, float]:
     }
 
 
+def _default_api_ui_step_sizes() -> dict[str, float]:
+    return {
+        "linear": 0.03,
+        "pan": 0.10,
+        "roll": 5.0,
+        "jaw": 5.0,
+    }
+
+
 def _default_max_relative_target() -> dict[str, float]:
     return {
-        "shoulder_pan": 5.0,
-        "shoulder_lift": 5.0,
-        "elbow_flex": 5.0,
-        "wrist_flex": 5.0,
-        "wrist_roll": 5.0,
+        "shoulder_pan": 10.0,
+        "shoulder_lift": 10.0,
+        "elbow_flex": 10.0,
+        "wrist_flex": 10.0,
+        "wrist_roll": 10.0,
         "gripper": 8.0,
     }
+
+
+def _default_ik_joint_names() -> list[str]:
+    return [
+        "shoulder_pan",
+        "shoulder_lift",
+        "elbow_flex",
+        "wrist_flex",
+        "wrist_roll",
+    ]
 
 
 @dataclass(frozen=True)
@@ -40,23 +59,35 @@ class ArmSettings:
     port: str = ""
     robot_id: str = DEFAULT_ROBOT_ID
     use_degrees: bool = True
+    calibrate_on_connect: bool = False
+    ik_joint_names: list[str] = field(default_factory=_default_ik_joint_names)
+    ik_end_effector_link: str = "tool_tip"
     loop_hz: float = 20.0
     step_sizes: dict[str, float] = field(default_factory=_default_step_sizes)
-    max_relative_target: dict[str, float] = field(default_factory=_default_max_relative_target)
+    api_ui_step_sizes: dict[str, float] = field(
+        default_factory=_default_api_ui_step_sizes
+    )
+    api_ui_repeat_ms: int = 20
+    max_relative_target: dict[str, float] = field(
+        default_factory=_default_max_relative_target
+    )
+    # EMA smoothing factor applied to joint targets before sending to hardware.
+    # 1.0 = no smoothing (instantaneous), lower values = smoother but slower response.
+    smoothing_alpha: float = 0.7
     dry_run: bool = False
 
     def with_overrides(self, overrides: Mapping[str, Any]) -> "ArmSettings":
         """Return a new settings object with partial overrides applied."""
 
         merged = asdict(self)
-        for key in ("step_sizes", "max_relative_target"):
+        for key in ("step_sizes", "api_ui_step_sizes", "max_relative_target"):
             if key in overrides:
                 nested = dict(merged[key])
                 nested.update(dict(overrides[key]))
                 merged[key] = nested
 
         for key, value in overrides.items():
-            if key not in {"step_sizes", "max_relative_target"}:
+            if key not in {"step_sizes", "api_ui_step_sizes", "max_relative_target"}:
                 merged[key] = value
 
         return ArmSettings(**merged)
@@ -114,6 +145,14 @@ def validate_settings(settings: ArmSettings) -> None:
     if missing_keys:
         raise ValueError(f"Missing step sizes for joints: {sorted(missing_keys)}")
 
+    missing_ui_keys = {"linear", "pan", "roll", "jaw"} - set(settings.api_ui_step_sizes)
+    if missing_ui_keys:
+        raise ValueError(
+            f"Missing api_ui_step_sizes entries: {sorted(missing_ui_keys)}"
+        )
+
     missing_limits = set(MOTOR_NAMES) - set(settings.max_relative_target)
     if missing_limits:
-        raise ValueError(f"Missing max_relative_target entries for joints: {sorted(missing_limits)}")
+        raise ValueError(
+            f"Missing max_relative_target entries for joints: {sorted(missing_limits)}"
+        )

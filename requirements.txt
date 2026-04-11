@@ -11,3 +11,6 @@ protobuf>=4.23.0
 pygame>=2.5.0
 lerobot
 pynput>=1.7.0
+fastapi>=0.115.0
+uvicorn>=0.30.0
+ikpy>=3.0.0

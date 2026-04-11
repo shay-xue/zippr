@@ -18,8 +18,10 @@ MOTOR_NAMES = (
 class EndEffectorDeltaCommand:
     """Canonical future decoder-facing command model.
 
-    All values are relative deltas in the robot base frame:
-    - `dx`, `dy`, `dz`: end-effector position deltas
+    Mixed relative deltas for high-level control:
+    - `dx`: radial reach delta in meters
+    - `dy`: shoulder pan delta in radians
+    - `dz`: end-effector height delta in meters
     - `d_rot`: tool roll delta about the tool axis
     - `d_jaw`: gripper jaw delta
     """

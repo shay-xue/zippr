@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+import logging
 from typing import Any, Protocol
 
 from .commands import MOTOR_NAMES
 from .config import ArmSettings
+
+logger = logging.getLogger(__name__)
 
 
 class RobotInterface(Protocol):
@@ -75,7 +78,7 @@ class SO101ArmController:
             return
 
         self._robot = self._robot_factory(self.settings)
-        self._robot.connect()
+        self._robot.connect(calibrate=self.settings.calibrate_on_connect)
         self._connected = True
 
     def get_observation(self) -> dict[str, Any]:
@@ -102,6 +105,25 @@ class SO101ArmController:
             raise RuntimeError("Robot has not been initialized.")
 
         sent_action = self._robot.send_action(action)
+        mismatches = {}
+        for key, requested_value in action.items():
+            sent_value = sent_action.get(key)
+            if sent_value is None:
+                mismatches[key] = {
+                    "requested": requested_value,
+                    "sent": None,
+                }
+                continue
+            if abs(float(sent_value) - requested_value) > 1e-6:
+                mismatches[key] = {
+                    "requested": requested_value,
+                    "sent": float(sent_value),
+                }
+        if mismatches:
+            logger.warning(
+                "send_action returned values different from requested action: %s",
+                mismatches,
+            )
         return {
             key.removesuffix(".pos"): float(value)
             for key, value in sent_action.items()

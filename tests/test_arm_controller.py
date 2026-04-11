@@ -60,6 +60,28 @@ class SO101ArmControllerTests(unittest.TestCase):
             ["connect", "get_observation", "send_action", "disconnect"],
         )
 
+    def test_controller_logs_warning_when_send_action_value_differs(self) -> None:
+        class ClampingFakeRobot(FakeRobot):
+            def send_action(self, action: dict[str, float]) -> dict[str, float]:
+                self.events.append("send_action")
+                self.actions.append(action)
+                return {"wrist_roll.pos": action["wrist_roll.pos"] - 1.0}
+
+        fake_robot = ClampingFakeRobot()
+        controller = SO101ArmController(
+            settings=ArmSettings(port="/dev/mock"),
+            robot_factory=lambda _: fake_robot,
+        )
+        controller.connect()
+        with self.assertLogs("arm.controller", level="WARNING") as logs:
+            result = controller.send_joint_targets({"wrist_roll": 5.0})
+        controller.disconnect()
+
+        self.assertEqual(result, {"wrist_roll": 4.0})
+        self.assertTrue(
+            any("send_action returned values different from requested action" in entry for entry in logs.output)
+        )
+
     def test_controller_dry_run_updates_observation_without_robot(self) -> None:
         controller = SO101ArmController(settings=ArmSettings(dry_run=True))
 

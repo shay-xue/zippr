@@ -5,17 +5,19 @@ from __future__ import annotations
 import argparse
 from collections.abc import Iterable
 
-from lerobot.motors.feetech import FeetechMotorsBus
-
 from .config import load_settings
 
 
 def _model_number_to_name_map() -> dict[int, str]:
+    from lerobot.motors.feetech import FeetechMotorsBus
+
     return {value: key for key, value in FeetechMotorsBus.model_number_table.items()}
 
 
 def scan_motor_ids(port: str) -> dict[int, dict[int, int]]:
     """Return responding motor IDs grouped by baudrate."""
+
+    from lerobot.motors.feetech import FeetechMotorsBus
 
     bus = FeetechMotorsBus(port=port, motors={})
     bus.connect(handshake=False)
@@ -36,11 +38,15 @@ def format_scan_results(port: str, scan_results: dict[int, dict[int, int]]) -> s
     """Build a readable report for the scan results."""
 
     lines = [f"Motor scan results for port: {port}"]
-    model_name_by_number = _model_number_to_name_map()
 
     if not scan_results:
         lines.append("No responding motors found on any supported baudrate.")
         return "\n".join(lines)
+
+    try:
+        model_name_by_number = _model_number_to_name_map()
+    except ModuleNotFoundError:
+        model_name_by_number = {}
 
     for baudrate in sorted(scan_results):
         lines.append(f"")

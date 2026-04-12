@@ -17,6 +17,14 @@
 
 ---
 
+## Authors
+
+- Manraj Mondair — [LinkedIn](https://www.linkedin.com/in/manrajmondair/)
+- Shayling Zhao — [LinkedIn](https://www.linkedin.com/in/shayling-zhao/)
+- Medha Shridharan — [LinkedIn](https://www.linkedin.com/in/medha-shridharan-81b716236/)
+
+---
+
 ## Why This Matters
 
 ZIPPR is a **general-purpose neural-to-motor bridge** — decoded brain signals drive a 6-DOF robotic arm through continuous 3D motion with grip control. The decoder learns to map arbitrary neural patterns to 7 simultaneous output channels, meaning the same architecture can control any downstream actuator: a robotic arm, a prosthetic hand, a wheelchair, or a cursor.
@@ -63,7 +71,7 @@ The core contribution is a complete, end-to-end, deployable closed-loop BCI: fro
 | Decoder R² (joystick axes) | **0.847** |
 | Decoder R² (triggers) | **0.763** |
 | Gate classification accuracy | **97.1%** |
-| End-to-end latency | **~16 ms** |
+| End-to-end latency | **~106 ms** |
 | Model parameters | **467K** |
 | ONNX model size | **1.8 MB** |
 | Training data required | **11.1 minutes** |
@@ -118,10 +126,10 @@ Nine decoder versions were developed iteratively, progressing from simple baseli
 ### Training
 
 ```bash
-python scripts/train_decoder_v9.py
+uv run python scripts/train_decoder_v9.py
 ```
 
-- **Data**: 60 HDF5 recordings (32 from run006 + 28 from run007), 11.1 minutes total
+- **Data**: 69 HDF5 recordings (38 from run006 + 31 from run007), 11.1 minutes total
 - **Split**: File-based stratified train/val (no temporal leakage across files)
 - **Optimizer**: AdamW (lr=5e-4, weight_decay=1e-4) with cosine annealing warm restarts
 - **Regularization**: GRU dropout 0.3, gradient clipping at 1.0, input noise augmentation (σ=0.05), early stopping (patience=40)
@@ -134,7 +142,7 @@ Five architectures were benchmarked on identical preprocessed data:
 | Model | Parameters | R² (avg) | Notes |
 |:------|:---------:|:--------:|:------|
 | SVM | 41K support vectors | 0.08 | Linear kernel, no temporal modeling |
-| XGBoost | 100 estimators | 0.19 | Strong per-bin, but no sequence context |
+| XGBoost | 300 estimators | 0.19 | Strong per-bin, but no sequence context |
 | MLP | 1.5M | 0.33 | Flattened window input, prone to overfitting |
 | CNN1D | 510K | 0.29 | Captures local patterns, limited receptive field |
 | **GRU v9** | **467K** | **0.847** | **Sequential context over 1.5 s, production model** |
@@ -156,7 +164,7 @@ The Synapse app runs a real-time C++ inference pipeline directly on the SciFi he
 7. Run ONNX Runtime inference → 7 outputs: `[joy_x, joy_y, rot, depth, lt, rt, gate]`
 8. Publish decoded vector on the `joystick_out` Synapse tap at 10 Hz
 
-**Latency breakdown**: 10 ms bin accumulation + < 1 ms feature extraction + < 5 ms ONNX inference = **~16 ms total**.
+**Latency breakdown**: 100 ms bin accumulation + < 1 ms feature extraction + < 5 ms ONNX inference = **~106 ms total**.
 
 The ONNX model accepts input shape `(1, 192, 15)` — batch, features, sequence — and outputs `(1, 7)`. An internal transpose converts to the GRU's native `(1, 15, 192)` ordering, making the model plug-and-play with the Synapse C++ SDK.
 
@@ -224,26 +232,25 @@ The Streamlit-based real-time interface provides:
 ```bash
 git clone https://github.com/manrajmondair/science-neurotech.git
 cd science-neurotech
-bash setup.sh
-source venv/bin/activate
+uv sync
 ```
 
 ### Full System Launch
 
 ```bash
 # 1. Deploy decoder to SciFi device
-cd synapse_app && bash deploy_synapse_app.sh && synapsectl start
+cd synapse_app && bash deploy_synapse_app.sh && uv run synapsectl start
 
 # 2. Start arm control server
-python arm/api_server.py
+uv run python arm/api_server.py
 
 # 3. Start brain-to-arm bridge (set env vars for live hardware)
 USE_REAL_ARM=true USE_MOCK_DECODER=false \
-python scripts/brain_to_arm.py --device-ip <SCIFI_IP>
+uv run python scripts/brain_to_arm.py --device-ip <SCIFI_IP>
 
 # 4. Launch dashboard
 USE_REAL_ARM=true USE_MOCK_DECODER=false \
-streamlit run app/streamlit_app.py --server.port 8501 --server.headless true
+uv run streamlit run app/streamlit_app.py --server.port 8501 --server.headless true
 ```
 
 ### Demo Mode (No Hardware)
@@ -251,7 +258,7 @@ streamlit run app/streamlit_app.py --server.port 8501 --server.headless true
 The dashboard runs fully standalone with a built-in mock decoder and simulated arm:
 
 ```bash
-streamlit run app/streamlit_app.py --server.port 8501 --server.headless true
+uv run streamlit run app/streamlit_app.py --server.port 8501 --server.headless true
 ```
 
 No environment variables needed — mock mode is the default.
@@ -259,11 +266,11 @@ No environment variables needed — mock mode is the default.
 ### CLI Tools
 
 ```bash
-arm-api-server          # FastAPI arm control server
-arm-keyboard-teleop     # Manual keyboard control
-arm-web-teleop          # Browser-based teleoperation UI
-arm-check-motor-ids     # Verify servo hardware connections
-arm-set-zero            # Calibrate arm to zero position
+uv run arm-api-server          # FastAPI arm control server
+uv run arm-keyboard-teleop     # Manual keyboard control
+uv run arm-web-teleop          # Browser-based teleoperation UI
+uv run arm-check-motor-ids     # Verify servo hardware connections
+uv run arm-set-zero            # Calibrate arm to zero position
 ```
 
 ---
@@ -279,8 +286,8 @@ Seven structured recording sessions were conducted to iteratively build and vali
 | 003 | Hard mode — all 12 inputs simultaneously | 2 | — |
 | 004 | Structured mapping — systematic channel validation | 12 | — |
 | 005 | Individual isolation — one input at a time | 12 | — |
-| 006 | Primary training set | 32 | 5.5 min |
-| 007 | Extended training set | 28 | 5.6 min |
+| 006 | Primary training set | 38 | 5.5 min |
+| 007 | Extended training set | 31 | 5.6 min |
 
 Hardware: 64 neural channels + 12 label channels (Xbox controller ground truth), 32 kHz, 12-bit ADC. Full channel layout in [`CHANNEL_MAP.md`](CHANNEL_MAP.md).
 
@@ -324,8 +331,9 @@ zippr/
 │   └── synapse-example-app/
 │       ├── src/fixed_weight_decoder.cpp    Spike extraction + ONNX inference
 │       ├── src/fixed_weight_decoder.hpp    Embedded normalization constants
-│       ├── CMakeLists.txt                  ONNX Runtime + Synapse SDK build
-│       └── deploy_synapse_app.sh           Cross-compile and deploy script
+│       └── CMakeLists.txt                  ONNX Runtime + Synapse SDK build
+│
+├── synapse_app/deploy_synapse_app.sh     Cross-compile and deploy script
 │
 ├── models/
 │   ├── decoder.onnx              Production v9 GRU model (ONNX)

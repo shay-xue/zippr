@@ -62,6 +62,17 @@ WORKSPACE_Z_MAX: float = 0.0       # 2-D grid → z unused       # DIMENSION
 REAL_ARM_X_RANGE: tuple[float, float] = (0.10, 0.40)   # DIMENSION
 REAL_ARM_Y_RANGE: tuple[float, float] = (-0.15, 0.15)  # DIMENSION
 
+# ── Rate mode — board center + success zone ─────────────────────────────────
+# Board sits right against the arm; center = midpoint of range of motion.
+# In grid-coordinate space the midpoint is always (GRID_COLS-1)/2.
+RATE_CENTER_X: float = (WORKSPACE_X_MIN + WORKSPACE_X_MAX) / 2.0   # 3.5  # DIMENSION
+RATE_CENTER_Y: float = (WORKSPACE_Y_MIN + WORKSPACE_Y_MAX) / 2.0   # 3.5  # DIMENSION
+# Success zone radius: 30% of grid range (generous — biased in our favour).
+_GRID_RANGE: float = WORKSPACE_X_MAX - WORKSPACE_X_MIN             # 7.0
+RATE_ZONE_RADIUS: float = _GRID_RANGE * 0.30                       # 2.1  # DIMENSION
+# Gripper must be at least 10% open to count as a placement.
+RATE_GRIPPER_MIN: float = 0.10                                      # DIMENSION
+
 # ── H5 recording layout ─────────────────────────────────────────────────────
 N_NEURAL_CHANNELS: int = 64
 N_TARGET_CHANNELS: int = 12

@@ -46,6 +46,10 @@ from config import (
     DECODER_WS_URL,
     N_SQUARES,
     RANDOM_SEED,
+    RATE_CENTER_X,
+    RATE_CENTER_Y,
+    RATE_GRIPPER_MIN,
+    RATE_ZONE_RADIUS,
     SCIFI_DEVICE_IP,
     SESSION_DURATION,
     SYNAPSE_TAP_NAME,
@@ -600,10 +604,8 @@ def _demo_pick_piece(rng: random.Random) -> str:
 
 # ── Rate mode constants ─────────────────────────────────────────────────────
 # Center of the 8×8 board in grid coordinates
-RATE_CENTER_X: float = 3.5
-RATE_CENTER_Y: float = 3.5
-RATE_ZONE_RADIUS: float = 1.5     # arm within 1.5 squares of center = "in zone"
-RATE_GRIPPER_MIN: float = 0.10    # gripper must be ≥10% open
+# Rate mode constants imported from config:
+# RATE_CENTER_X, RATE_CENTER_Y, RATE_ZONE_RADIUS, RATE_GRIPPER_MIN
 
 
 def _check_rate_success(ss: dict) -> None:

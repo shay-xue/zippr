@@ -25,6 +25,9 @@ env/
 .DS_Store
 Thumbs.db
 
+# Data collection runs
+data_collection/*
+
 # Data files (h5/hdf5 tracked by Git LFS — see .gitattributes)
 *.npy
 *.npz

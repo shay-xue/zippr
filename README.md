@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://ziipper.streamlit.app"><img src="https://img.shields.io/badge/Live_Demo-ZIPPR_Dashboard-545333?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"></a>
+  <a href="https://ziippr.streamlit.app"><img src="https://img.shields.io/badge/Live_Demo-ZIPPR_Dashboard-545333?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"></a>
 </p>
 
 <p align="center">
@@ -212,7 +212,7 @@ This projection layer is modular — swapping it out adapts the arm to any spati
 
 ## ZIPPR Dashboard
 
-> **[Try the live demo](https://ziipper.streamlit.app)** — runs fully in-browser with mock decoder and simulated arm (no hardware needed).
+> **[Try the live demo](https://ziippr.streamlit.app)** — runs fully in-browser with mock decoder and simulated arm (no hardware needed).
 
 The Streamlit-based real-time interface provides:
 

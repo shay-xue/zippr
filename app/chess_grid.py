@@ -63,6 +63,7 @@ def render_grid_html(
     target_row: int,
     flash: Optional[str] = None,
     grid_size_px: int = 380,         # DIMENSION — total grid width in pixels
+    piece_symbol: str = "♟",         # override for Local Play claw mode
 ) -> str:
     """Return self-contained HTML/CSS for the 8×8 grid.
 
@@ -108,7 +109,8 @@ def render_grid_html(
             if is_piece:
                 piece_color = "#FDFBD4" if is_target else "#161510"
                 piece_content = (
-                    f'<span style="font-size:26px;color:{piece_color};">♟</span>'
+                    f'<span style="font-size:26px;color:{piece_color};">'
+                    f'{piece_symbol}</span>'
                 )
 
             sq_label = square_label(col, row)

@@ -397,10 +397,13 @@ _init_state()
 def _start_session() -> None:
     ss = st.session_state
     is_demo = ss.get("game_mode") == "Demo Day"
+    is_local = ss.get("game_mode") == "Local Play"
     ss["rng"] = random.Random(RANDOM_SEED)
 
-    # Arm setup — needed for Chess Grid and Demo Day Rate mode
-    if ss["cfg_real_arm"]:
+    # Arm setup — MockArm always for Local Play (software-only)
+    if is_local:
+        ss["arm"] = MockArm(start_col=0, start_row=0)
+    elif ss["cfg_real_arm"]:
         try:
             arm = RealArm(arm_url=ARM_API_URL, start_col=0, start_row=0)
             arm.get_position()  # probe
@@ -719,7 +722,11 @@ def _check_rate_success(ss: dict) -> bool:
 with st.sidebar:
     st.markdown("### ⚙ ZIPPR Config")
     st.markdown("---")
-    game_mode = st.radio("Game Mode", ["Chess Grid", "Demo Day"], horizontal=True, key="sb_game_mode")
+    game_mode = st.radio(
+        "Game Mode", ["Chess Grid", "Demo Day", "Local Play"], horizontal=True,
+        key="sb_game_mode",
+        help="Chess Grid: arm + decoder. Demo Day: piece pick. Local Play: software-only claw game.",
+    )
     st.session_state["game_mode"] = game_mode
     if game_mode == "Demo Day":
         bit_mode = st.radio(
@@ -924,21 +931,25 @@ def _game_panel() -> None:
 
     col_chess, col_bps = st.columns([1, 1], gap="large")
 
-    # ── LEFT: Chess grid ──────────────────────────────────────────────────────
+    # ── LEFT: Chess grid / Local Play ───────────────────────────────────────
+    is_local = ss.get("game_mode") == "Local Play"
+    claw = "🦀" if is_local else "♟"
     with col_chess:
-        st.markdown("#### Chess Grid")
+        st.markdown(f'#### {"Local Play" if is_local else "Chess Grid"}')
         grid_html = render_grid_html(
             piece_col=ss["piece_col"],
             piece_row=ss["piece_row"],
             target_col=ss["target_col"],
             target_row=ss["target_row"],
             flash=ss["flash"],
+            piece_symbol=claw,
         )
         # st.html() renders tables faithfully; st.markdown would mangle the CSS
         st.html(grid_html)
+        claw_label = "🦀 Claw" if is_local else "♟"
         st.markdown(
             f'<div style="text-align:center;font-size:17px;color:#545333;margin-top:6px;">'
-            f'♟ {square_label(ss["piece_col"], ss["piece_row"])}'
+            f'{claw_label} {square_label(ss["piece_col"], ss["piece_row"])}'
             f'&nbsp;→&nbsp;'
             f'⚑ {square_label(ss["target_col"], ss["target_row"])}'
             f'</div>',
@@ -1331,8 +1342,11 @@ ss = st.session_state
 
 if not ss["session_running"] and not ss["session_ended"]:
     is_demo = ss.get("game_mode") == "Demo Day"
+    is_local = ss.get("game_mode") == "Local Play"
     is_rate = ss.get("demo_bit_mode") == "Rate"
-    if is_demo and is_rate:
+    if is_local:
+        title = "LOCAL PLAY — CLAW GAME"
+    elif is_demo and is_rate:
         title = "DEMO DAY — RATE MODE"
     elif is_demo:
         title = "DEMO DAY — PIECE PICK"
@@ -1345,7 +1359,9 @@ if not ss["session_running"] and not ss["session_ended"]:
         '</div>',
         unsafe_allow_html=True,
     )
-    if is_demo and is_rate:
+    if is_local:
+        subtitle = 'software-only &nbsp;·&nbsp; navigate the 🦀 claw to each target &nbsp;·&nbsp; 60-second session'
+    elif is_demo and is_rate:
         subtitle = 'automatic detection &nbsp;·&nbsp; arm position + gripper &nbsp;·&nbsp; press END to finish'
     elif is_demo:
         subtitle = 'pick the prompted piece &nbsp;·&nbsp; place it on the board &nbsp;·&nbsp; confirm each trial'
@@ -1370,6 +1386,7 @@ if ss["session_ended"]:
     final_sc  = ss.get("final_sc", ss["sc"])
     final_si  = ss.get("final_si", ss["si"])
     is_demo   = ss.get("game_mode") == "Demo Day"
+    is_local  = ss.get("game_mode") == "Local Play"
     is_rate   = ss.get("demo_bit_mode") == "Rate"
 
     st.markdown(
@@ -1460,9 +1477,11 @@ if ss["session_ended"]:
                         unsafe_allow_html=True,
                     )
         else:
+            mode_label = "Local Play (software)" if is_local else "Chess Grid"
             logger_inst: Optional[SessionLogger] = ss.get("logger")
             st.markdown(
                 f'<div style="font-size:17px;color:#545333;line-height:2;">'
+                f'Mode: {mode_label}<br>'
                 f'N = {N_SQUARES} squares<br>'
                 f'log₂(N) = {LOG2_N:.1f} bits/correct<br>'
                 f'Formula: B = log₂(N)×max(Sc−Si,0)/t<br>'

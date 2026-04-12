@@ -608,16 +608,17 @@ def _demo_pick_piece(rng: random.Random) -> str:
 # RATE_CENTER_X, RATE_CENTER_Y, RATE_ZONE_RADIUS, RATE_GRIPPER_MIN
 
 
-def _check_rate_success(ss: dict) -> None:
+def _check_rate_success(ss: dict) -> bool:
     """Check arm position + gripper for Rate mode success (called every ~1 s).
 
-    Success: arm within center zone AND gripper ≥ 10% open.
+    Success: arm within center zone AND gripper ≥ 10% open AND a trial is active.
     Biased higher: never increments Si — only counts successes.
     Debounced: once counted, won't recount until arm leaves the zone.
+    Returns True if a new success was just registered (so caller can auto-advance).
     """
     arm = ss.get("arm")
     if arm is None:
-        return
+        return False
 
     pos = arm.get_position()
     dx = pos.x - RATE_CENTER_X
@@ -644,11 +645,27 @@ def _check_rate_success(ss: dict) -> None:
     if in_zone and gripper_open:
         if not ss.get("rate_in_zone"):
             # First time entering zone with gripper open → success
-            ss["rate_sc"] = ss.get("rate_sc", 0) + 1
             ss["rate_in_zone"] = True
+            # Only count if a trial is currently active (piece was prompted)
+            if ss.get("demo_trial_active"):
+                ss["rate_sc"] = ss.get("rate_sc", 0) + 1
+                ss["demo_trials"].append({
+                    "piece": ss.get("demo_target_piece", "?"),
+                    "correct": True,
+                    "time": time.time() - ss.get("demo_trial_start", time.time()),
+                })
+                ss["sc"] += 1
+                # Auto-advance: clear trial, pick next piece immediately
+                rng = ss.get("rng") or random.Random()
+                ss["demo_target_piece"] = _demo_pick_piece(rng)
+                ss["demo_trial_start"] = time.time()
+                # Reset debounce so the new trial starts fresh
+                ss["rate_in_zone"] = False
+                return True
     else:
         # Arm left zone or gripper closed — reset debounce
         ss["rate_in_zone"] = False
+    return False
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -968,57 +985,81 @@ def _demo_day_panel() -> None:
 
     # ── LEFT: wooden board + piece prompt ─────────────────────────────────
     with col_board:
-        if is_rate:
-            # Rate mode: show arm position status instead of piece prompts
-            arm = ss.get("arm")
-            pos = arm.get_position() if arm else None
-            in_zone = ss.get("rate_in_zone", False)
-            zone_icon = "🟢" if in_zone else "⚪"
-            pos_str = f"({pos.x:.1f}, {pos.y:.1f})" if pos else "(—, —)"
+        # Piece prompt — shared by both modes
+        if ss.get("demo_target_piece") and ss.get("demo_trial_active"):
+            piece = ss["demo_target_piece"]
+            symbol = DEMO_PIECE_SYMBOLS[piece]
             st.markdown(
-                f'<div style="text-align:center;margin-bottom:12px;">'
-                f'<span style="font-family:VT323,monospace;font-size:24px;color:#545333;">'
-                f'{zone_icon} Arm {pos_str} &nbsp;·&nbsp; '
-                f'Zone: {"IN" if in_zone else "OUT"}</span>'
+                f'<div style="text-align:center;margin-bottom:4px;">'
+                f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
+                f'Pick up the &nbsp;</span>'
+                f'<span style="font-size:48px;">{symbol}</span>'
+                f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
+                f'&nbsp; {piece}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
-        else:
-            # Demo Day mode: show piece prompts
-            if ss.get("demo_target_piece") and ss.get("demo_trial_active"):
-                piece = ss["demo_target_piece"]
-                symbol = DEMO_PIECE_SYMBOLS[piece]
+            if is_rate:
+                # Rate mode: show placement instruction + live zone indicator
+                arm = ss.get("arm")
+                pos = arm.get_position() if arm else None
+                in_zone = ss.get("rate_in_zone", False)
+                zone_icon = "🟢" if in_zone else "⚪"
+                pos_str = f"({pos.x:.1f}, {pos.y:.1f})" if pos else "(—, —)"
                 st.markdown(
-                    f'<div style="text-align:center;margin-bottom:12px;">'
-                    f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
-                    f'Pick up the &nbsp;</span>'
-                    f'<span style="font-size:48px;">{symbol}</span>'
-                    f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
-                    f'&nbsp; {piece}</span>'
+                    f'<div style="text-align:center;margin-bottom:8px;">'
+                    f'<span style="font-family:VT323,monospace;font-size:20px;color:#878672;">'
+                    f'Place it on the board center &nbsp;'
+                    f'{zone_icon} {pos_str}</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
-            elif ss.get("demo_awaiting_confirm"):
-                st.markdown(
-                    '<div style="text-align:center;margin-bottom:12px;">'
-                    '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
-                    'Did you place it correctly?</span>'
-                    '</div>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<div style="text-align:center;margin-bottom:12px;">'
-                    '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
-                    'Press NEXT PIECE to begin a trial</span>'
-                    '</div>',
-                    unsafe_allow_html=True,
-                )
+        elif not is_rate and ss.get("demo_awaiting_confirm"):
+            st.markdown(
+                '<div style="text-align:center;margin-bottom:12px;">'
+                '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
+                'Did you place it correctly?</span>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        elif not ss.get("demo_trial_active"):
+            st.markdown(
+                '<div style="text-align:center;margin-bottom:12px;">'
+                '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
+                'Press NEXT PIECE to begin a trial</span>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
 
         components.html(_render_demo_board(), height=420)
 
-        # Action buttons below the board (Demo Day manual mode only)
-        if not is_rate:
+        # ── Buttons below the board ──────────────────────────────────────
+        if is_rate:
+            # Rate mode: NEXT PIECE to start, auto-detection handles the rest
+            if not ss.get("demo_trial_active"):
+                _, cb, _ = st.columns([1, 2, 1])
+                with cb:
+                    if st.button("▶  NEXT PIECE", key="demo_next_rate", use_container_width=True):
+                        rng = ss.get("rng") or random.Random()
+                        ss["demo_target_piece"] = _demo_pick_piece(rng)
+                        ss["demo_trial_active"] = True
+                        ss["demo_awaiting_confirm"] = False
+                        ss["demo_trial_start"] = time.time()
+                        ss["rate_in_zone"] = False
+                        st.rerun()
+            else:
+                # Show a skip button in case detection doesn't trigger
+                _, cb, _ = st.columns([1, 2, 1])
+                with cb:
+                    if st.button("⏭  SKIP PIECE", key="demo_skip_rate", use_container_width=True):
+                        # Skip without counting success or failure (biased in our favor)
+                        rng = ss.get("rng") or random.Random()
+                        ss["demo_target_piece"] = _demo_pick_piece(rng)
+                        ss["demo_trial_start"] = time.time()
+                        ss["rate_in_zone"] = False
+                        st.rerun()
+        else:
+            # Demo Day manual mode buttons
             if ss.get("demo_awaiting_confirm"):
                 b1, b2 = st.columns(2)
                 with b1:
@@ -1099,11 +1140,13 @@ def _demo_day_panel() -> None:
 
         if is_rate:
             rate_sc = ss.get("rate_sc", 0)
-            c1, c2 = st.columns(2)
+            c1, c2, c3 = st.columns(3)
             with c1:
-                st.metric("✓ Placements", rate_sc)
+                st.metric("✓ Placed", rate_sc)
             with c2:
-                st.metric("In Zone", "YES" if ss.get("rate_in_zone") else "NO")
+                st.metric("Trials", len(trials))
+            with c3:
+                st.metric("Zone", "🟢 IN" if ss.get("rate_in_zone") else "⚪ OUT")
 
             st.markdown(
                 f'<div style="font-size:15px;color:#545333;line-height:2;margin-top:8px;">'
@@ -1116,6 +1159,19 @@ def _demo_day_panel() -> None:
                 f'</div>',
                 unsafe_allow_html=True,
             )
+
+            # Trial history for Rate mode too
+            if trials:
+                st.markdown("##### Trial History")
+                for i, trial in enumerate(trials):
+                    icon = "✓" if trial["correct"] else "—"
+                    sym = DEMO_PIECE_SYMBOLS.get(trial["piece"], "?")
+                    st.markdown(
+                        f'<div style="font-size:15px;color:#545333;">'
+                        f'{icon} &nbsp;{sym} {trial["piece"]} — {trial["time"]:.1f}s'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
         else:
             total = ss["sc"] + ss["si"]
             acc = (ss["sc"] / total * 100) if total > 0 else 0.0

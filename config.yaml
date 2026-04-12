@@ -1,0 +1,92 @@
+# =============================================================================
+# config.yaml — Global hyperparameters for the BCI decoding pipeline
+# Science Corp / Global NeuroHack 2026
+# =============================================================================
+
+# ── Data paths ─────────────────────────────────────────────────────────────────
+data:
+  recordings_dir: "data/recordings"
+  preprocessed_dir: "data/preprocessed"
+  reports_dir: "reports"
+  figures_dir: "reports/figures"
+  models_dir: "models/trained"
+  # Only process files matching these patterns (checked in order)
+  file_patterns:
+    - "broadband_data*.h5"
+
+# ── Recording layout ──────────────────────────────────────────────────────────
+recording:
+  sample_rate_hz: 32000
+  n_neural: 64        # channels 0-63: encoded neural signals
+  n_targets: 12       # channels 64-75: raw controller labels (training only)
+  n_total: 76         # total channels in each HDF5 recording
+  lsb_uv: 1.0        # least-significant bit in µV (from HDF5 attrs, overridden per file)
+
+# ── Preprocessing ─────────────────────────────────────────────────────────────
+preprocessing:
+  bin_ms: 20.0                    # temporal bin size in milliseconds
+  # bins = bin_ms * sample_rate_hz / 1000 = 20 * 32000 / 1000 = 640 samples
+  k_values: [2.5, 3.0, 3.5, 4.0] # spike-threshold sweep values
+  target_aggregation: "mean"       # "mean" or "last" — mean chosen for regression stability
+  skip_existing: true             # never overwrite preprocessed files
+  # Sanity check: print shapes/stats for first processed file
+  sanity_check: true
+
+# ── Train / test split ────────────────────────────────────────────────────────
+split:
+  test_fraction: 0.20   # 20% held out
+  shuffle: false        # preserve temporal order — no leakage
+  random_seed: 42
+
+# ── Model hyperparameters ──────────────────────────────────────────────────────
+models:
+
+  mlp:
+    enabled: true
+    hidden_size: 256
+    n_layers: 2
+    activation: "relu"
+    dropout: 0.0
+    optimizer: "adam"
+    learning_rate: 1.0e-3
+    batch_size: 256
+    epochs: 50
+    random_seed: 42
+
+  xgboost:
+    enabled: true
+    n_estimators: 100
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    n_jobs: -1
+    random_seed: 42
+
+  cnn1d:
+    enabled: true
+    n_filters: 64
+    kernel_size: 3
+    n_conv_layers: 2
+    dropout: 0.1
+    optimizer: "adam"
+    learning_rate: 1.0e-3
+    batch_size: 256
+    epochs: 50
+    random_seed: 42
+
+  svm:
+    enabled: true
+    kernel: "rbf"
+    C: 1.0
+    epsilon: 0.1
+    # Note: SVM with full dataset can be slow; subsample if needed
+    max_train_samples: 5000   # set to null to use all
+    random_seed: 42
+
+# ── Evaluation ─────────────────────────────────────────────────────────────────
+evaluation:
+  metrics: ["r2"]          # r2_score computed per output + mean
+  plot_sample_channel: 0   # which controller channel to use in pred-vs-actual plot
+  fig_dpi: 120
+  fig_format: "png"

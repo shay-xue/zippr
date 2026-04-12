@@ -70,3 +70,5 @@ Each run folder contains:
 | [003](run_003_hard_mode_all_inputs/) | All inputs active (unstructured) | 3.7s | 76 | Hard | Input discovery |
 | [004](run_004_structured_mapping/) | One input at a time (5s each) | 27.2s | 76 | Hard | Partial mapping |
 | [005](run_005_individual_mapping/) | 12 individual isolated recordings | 12×5s | 76 | Hard | **Mapping complete** |
+| [006](run_006_training_data/) | 32 structured recordings — diverse inputs | 666s (11 min) | 76 | Hard | **Primary training set** |
+| [007](run_007_structured_training/) | 32 targeted sessions — fills LStY/RT gaps + per-button isolation | ~57 min | 76 | Hard | In progress |

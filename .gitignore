@@ -51,3 +51,5 @@ arm/local_config.py
 
 # Docker
 *.tar
+full_repo.txt
+file_tree.txt

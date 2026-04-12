@@ -1,0 +1,36 @@
+{
+  "version": "v8",
+  "seq_len": 15,
+  "bin_ms": 100,
+  "feature_type": "track_a",
+  "sigma_thresholds": [
+    3.0,
+    4.0,
+    5.0
+  ],
+  "n_features": 192,
+  "hidden_size": 192,
+  "n_layers": 2,
+  "dropout": 0.3,
+  "sample_rate": 32000,
+  "bandpass_hz": [
+    200,
+    5000
+  ],
+  "n_files_run006": 0,
+  "n_files_run007": 28,
+  "joy_r2_avg": 0.7415653318166733,
+  "joy_r2_per": [
+    0.7320114374160767,
+    0.7700334787368774,
+    0.6734079122543335,
+    0.7908084988594055
+  ],
+  "trig_r2_avg": 0.6209273934364319,
+  "trig_r2_per": [
+    0.7182668447494507,
+    0.5235879421234131
+  ],
+  "gate_acc": 1.0,
+  "xgb_baseline": null
+}

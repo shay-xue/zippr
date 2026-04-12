@@ -1,0 +1,240 @@
+{
+  "completed": [
+    "rest_start",
+    "lsty_up",
+    "lsty_down",
+    "lsty_sweep",
+    "lstx_right",
+    "lstx_left",
+    "lstx_sweep",
+    "lst_circle_cw",
+    "lst_circle_ccw",
+    "rsty_up",
+    "rsty_down",
+    "rsty_sweep",
+    "rstx_right",
+    "rstx_left",
+    "rstx_sweep",
+    "rst_circle_cw",
+    "rst_circle_ccw",
+    "lt_sweep",
+    "rt_sweep",
+    "lt_pump",
+    "rt_pump",
+    "both_sticks_circles",
+    "sticks_and_buttons",
+    "sticks_and_triggers",
+    "natural_play",
+    "rest_end"
+  ],
+  "files": [
+    {
+      "slug": "rest_start",
+      "label": "Rest \u2014 Baseline START",
+      "path": "data/recordings/run007_rest_start_20260411_194745.h5",
+      "duration": 120,
+      "elapsed": 123.5,
+      "timestamp": "2026-04-11T19:49:49.245376"
+    },
+    {
+      "slug": "lsty_up",
+      "label": "Left Stick Y \u2014 Full UP",
+      "path": "data/recordings/run007_lsty_up_20260411_194956.h5",
+      "duration": 120,
+      "elapsed": 42.1,
+      "timestamp": "2026-04-11T19:50:38.412274"
+    },
+    {
+      "slug": "lsty_down",
+      "label": "Left Stick Y \u2014 Full DOWN",
+      "path": "data/recordings/run007_lsty_down_20260411_202121.h5",
+      "duration": 120,
+      "elapsed": 138.2,
+      "timestamp": "2026-04-11T20:23:39.266183"
+    },
+    {
+      "slug": "lsty_sweep",
+      "label": "Left Stick Y \u2014 Slow vertical sweep",
+      "path": "data/recordings/run007_lsty_sweep_20260411_202407.h5",
+      "duration": 120,
+      "elapsed": 129.6,
+      "timestamp": "2026-04-11T20:26:08.594207"
+    },
+    {
+      "slug": "lstx_right",
+      "label": "Left Stick X \u2014 Full RIGHT",
+      "path": "data/recordings/run007_lstx_right_20260411_202728.h5",
+      "duration": 120,
+      "elapsed": 179.7,
+      "timestamp": "2026-04-11T20:30:28.165611"
+    },
+    {
+      "slug": "lstx_left",
+      "label": "Left Stick X \u2014 Full LEFT",
+      "path": "data/recordings/run007_lstx_left_20260411_203045.h5",
+      "duration": 120,
+      "elapsed": 121.1,
+      "timestamp": "2026-04-11T20:32:46.424514"
+    },
+    {
+      "slug": "lstx_sweep",
+      "label": "Left Stick X \u2014 Slow horizontal sweep",
+      "path": "data/recordings/run007_lstx_sweep_20260411_203300.h5",
+      "duration": 120,
+      "elapsed": 120.9,
+      "timestamp": "2026-04-11T20:35:00.945595"
+    },
+    {
+      "slug": "lst_circle_cw",
+      "label": "Left Stick \u2014 Full circle CLOCKWISE",
+      "path": "data/recordings/run007_lst_circle_cw_20260411_210658.h5",
+      "duration": 120,
+      "elapsed": 121.3,
+      "timestamp": "2026-04-11T21:08:59.340966"
+    },
+    {
+      "slug": "lst_circle_ccw",
+      "label": "Left Stick \u2014 Full circle COUNTER-CLOCKWISE",
+      "path": "data/recordings/run007_lst_circle_ccw_20260411_210912.h5",
+      "duration": 120,
+      "elapsed": 122.5,
+      "timestamp": "2026-04-11T21:11:14.843283"
+    },
+    {
+      "slug": "rsty_up",
+      "label": "Right Stick Y \u2014 Full UP",
+      "path": "data/recordings/run007_rsty_up_20260411_211246.h5",
+      "duration": 120,
+      "elapsed": 121.0,
+      "timestamp": "2026-04-11T21:14:47.496287"
+    },
+    {
+      "slug": "rsty_down",
+      "label": "Right Stick Y \u2014 Full DOWN",
+      "path": "data/recordings/run007_rsty_down_20260411_211504.h5",
+      "duration": 120,
+      "elapsed": 120.7,
+      "timestamp": "2026-04-11T21:17:05.189555"
+    },
+    {
+      "slug": "rsty_sweep",
+      "label": "Right Stick Y \u2014 Slow vertical sweep",
+      "path": "data/recordings/run007_rsty_sweep_20260411_211744.h5",
+      "duration": 120,
+      "elapsed": 121.3,
+      "timestamp": "2026-04-11T21:19:45.498033"
+    },
+    {
+      "slug": "rstx_right",
+      "label": "Right Stick X \u2014 Full RIGHT",
+      "path": "data/recordings/run007_rstx_right_20260411_212000.h5",
+      "duration": 120,
+      "elapsed": 121.0,
+      "timestamp": "2026-04-11T21:22:00.953650"
+    },
+    {
+      "slug": "rstx_left",
+      "label": "Right Stick X \u2014 Full LEFT",
+      "path": "data/recordings/run007_rstx_left_20260411_212207.h5",
+      "duration": 120,
+      "elapsed": 121.3,
+      "timestamp": "2026-04-11T21:24:09.161173"
+    },
+    {
+      "slug": "rstx_sweep",
+      "label": "Right Stick X \u2014 Slow horizontal sweep",
+      "path": "data/recordings/run007_rstx_sweep_20260411_212419.h5",
+      "duration": 120,
+      "elapsed": 121.3,
+      "timestamp": "2026-04-11T21:26:20.988355"
+    },
+    {
+      "slug": "rst_circle_cw",
+      "label": "Right Stick \u2014 Full circle CLOCKWISE",
+      "path": "data/recordings/run007_rst_circle_cw_20260411_212632.h5",
+      "duration": 120,
+      "elapsed": 120.8,
+      "timestamp": "2026-04-11T21:28:33.333307"
+    },
+    {
+      "slug": "rst_circle_ccw",
+      "label": "Right Stick \u2014 Full circle COUNTER-CLOCKWISE",
+      "path": "data/recordings/run007_rst_circle_ccw_20260411_212845.h5",
+      "duration": 120,
+      "elapsed": 121.2,
+      "timestamp": "2026-04-11T21:30:47.110721"
+    },
+    {
+      "slug": "lt_sweep",
+      "label": "Left Trigger \u2014 Slow analog sweep",
+      "path": "data/recordings/run007_lt_sweep_20260411_213222.h5",
+      "duration": 120,
+      "elapsed": 121.4,
+      "timestamp": "2026-04-11T21:34:23.964428"
+    },
+    {
+      "slug": "rt_sweep",
+      "label": "Right Trigger \u2014 Slow analog sweep",
+      "path": "data/recordings/run007_rt_sweep_20260411_213446.h5",
+      "duration": 120,
+      "elapsed": 120.9,
+      "timestamp": "2026-04-11T21:36:47.138207"
+    },
+    {
+      "slug": "lt_pump",
+      "label": "Left Trigger \u2014 Fast pumps",
+      "path": "data/recordings/run007_lt_pump_20260411_213704.h5",
+      "duration": 60,
+      "elapsed": 60.7,
+      "timestamp": "2026-04-11T21:38:04.691887"
+    },
+    {
+      "slug": "rt_pump",
+      "label": "Right Trigger \u2014 Fast pumps",
+      "path": "data/recordings/run007_rt_pump_20260411_213813.h5",
+      "duration": 60,
+      "elapsed": 60.8,
+      "timestamp": "2026-04-11T21:39:14.147667"
+    },
+    {
+      "slug": "both_sticks_circles",
+      "label": "Both Sticks \u2014 Simultaneous circles",
+      "path": "data/recordings/run007_both_sticks_circles_20260411_214155.h5",
+      "duration": 120,
+      "elapsed": 124.8,
+      "timestamp": "2026-04-11T21:43:56.672233"
+    },
+    {
+      "slug": "sticks_and_buttons",
+      "label": "Both Sticks + Face Buttons",
+      "path": "data/recordings/run007_sticks_and_buttons_20260411_214535.h5",
+      "duration": 120,
+      "elapsed": 121.6,
+      "timestamp": "2026-04-11T21:47:36.516143"
+    },
+    {
+      "slug": "sticks_and_triggers",
+      "label": "Both Sticks + Triggers",
+      "path": "data/recordings/run007_sticks_and_triggers_20260411_214754.h5",
+      "duration": 120,
+      "elapsed": 121.1,
+      "timestamp": "2026-04-11T21:49:55.570236"
+    },
+    {
+      "slug": "natural_play",
+      "label": "Natural Play \u2014 Freestyle",
+      "path": "data/recordings/run007_natural_play_20260411_215119.h5",
+      "duration": 300,
+      "elapsed": 302.5,
+      "timestamp": "2026-04-11T21:56:22.038259"
+    },
+    {
+      "slug": "rest_end",
+      "label": "Rest \u2014 Baseline END",
+      "path": "data/recordings/run007_rest_end_20260411_215636.h5",
+      "duration": 60,
+      "elapsed": 60.8,
+      "timestamp": "2026-04-11T21:57:36.644279"
+    }
+  ]
+}

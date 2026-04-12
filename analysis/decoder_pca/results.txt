@@ -1,0 +1,29 @@
+============================================================
+  PCA DECODER — RESULTS
+  PCA components: 66 (95.1% var)
+  Train bins: 54,029  |  Val bins: 12,591
+============================================================
+
+JOYSTICK (Ridge regression):
+  L-Stick X         R²=+0.0640  RMSE=0.3532
+  L-Stick Y         R²=-1.5044  RMSE=0.1511
+  R-Stick X         R²=+0.0901  RMSE=0.4825
+  R-Stick Y         R²=+0.1050  RMSE=0.5143
+  AVERAGE           R²=-0.3113  RMSE=0.3753
+
+TRIGGERS (Ridge regression):
+  LT (open)         R²=+0.0122  RMSE=0.2332
+  RT (close)        R²=-0.2056  RMSE=0.1897
+  AVERAGE           R²=-0.0967  RMSE=0.2114
+
+BUTTONS (Logistic regression):
+  A       acc=0.7385  F1=0.0048  (pos=0.001)
+  B       acc=0.7308  F1=0.0000  (pos=0.000)
+  X       acc=0.6938  F1=0.0000  (pos=0.000)
+  Y       acc=0.7022  F1=0.0005  (pos=0.000)
+  LB      acc=0.7389  F1=0.2227  (pos=0.051)
+  RB      acc=0.7118  F1=0.2607  (pos=0.074)
+  AVG     acc=0.7193  F1=0.0815
+
+Total time: 35.4s
+============================================================

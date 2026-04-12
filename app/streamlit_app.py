@@ -559,35 +559,56 @@ DEMO_N_CHOICES = 4
 DEMO_LOG2_N = math.log2(DEMO_N_CHOICES)  # 2.0
 
 
+def _load_logo_b64() -> str:
+    """Load the Science Corp logo as a base64 PNG string (cached at import)."""
+    logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo_b64.txt")
+    try:
+        with open(logo_path) as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return ""
+
+
+_LOGO_B64: str = _load_logo_b64()
+
+
 def _render_demo_board() -> str:
-    """Return self-contained HTML for a wooden board with the Science Corp logo."""
-    return """
+    """Return self-contained HTML for a wooden board with the Science Corp logo.
+
+    The physical board is light birch plywood with a laser-engraved logo.
+    The logo PNG (transparent background) is embedded as a base64 data URI
+    and tinted via CSS opacity + sepia filter to match the burnt-wood look.
+    """
+    logo_img = ""
+    if _LOGO_B64:
+        logo_img = (
+            f'<img src="data:image/png;base64,{_LOGO_B64}" '
+            f'width="130" height="155" '
+            f'style="opacity:0.28;filter:sepia(1) saturate(0.3) brightness(0.6);" />'
+        )
+    return f"""
 <html><body style="margin:0;padding:0;background:transparent;display:flex;justify-content:center;">
 <div style="
   width:400px;height:400px;
-  background:linear-gradient(145deg, #d4b896 0%, #c4a67a 30%, #b8956a 70%, #a8845a 100%);
-  border-radius:12px;
-  border:3px solid #8b7355;
-  box-shadow:inset 0 0 30px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.2);
+  background:linear-gradient(170deg, #f2e4ce 0%, #eedcc4 40%, #e8d4b8 100%);
+  border-radius:6px;
+  border:2px solid #d4c4a8;
+  box-shadow:inset 0 0 40px rgba(180,160,130,0.15), 0 3px 10px rgba(0,0,0,0.12);
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
 ">
   <div style="position:absolute;inset:0;
-    background:repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(139,115,85,0.08) 40px, rgba(139,115,85,0.08) 42px);
+    background:repeating-linear-gradient(90deg,
+      transparent, transparent 50px,
+      rgba(190,170,140,0.06) 50px, rgba(190,170,140,0.06) 52px);
+  "></div>
+  <div style="position:absolute;inset:0;
+    background:repeating-linear-gradient(92deg,
+      transparent, transparent 28px,
+      rgba(200,180,150,0.04) 28px, rgba(200,180,150,0.04) 29px);
   "></div>
   <div style="z-index:1;text-align:center;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260"
-      width="110" height="143" fill="none" stroke="rgba(80,60,35,0.5)"
-      stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M100 130 C60 130, 55 80, 70 55 C80 38, 95 30, 100 28
-        C105 30, 120 38, 130 55 C145 80, 140 130, 100 130 Z"/>
-      <path d="M100 130 C60 130, 55 180, 70 205 C80 222, 95 230, 100 232
-        C105 230, 120 222, 130 205 C145 180, 140 130, 100 130 Z"/>
-      <line x1="100" y1="80" x2="100" y2="180"/>
-      <line x1="55" y1="105" x2="145" y2="155"/>
-      <line x1="55" y1="155" x2="145" y2="105"/>
-      <line x1="55" y1="130" x2="145" y2="130"/>
-    </svg>
+    {logo_img}
   </div>
 </div>
 </body></html>

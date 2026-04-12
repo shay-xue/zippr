@@ -190,30 +190,39 @@ class RealArm(ArmInterface):
             x=float(start_col), y=float(start_row),
         )
 
-    def _arm_pose_to_grid(self, arm_x: float, arm_y: float) -> tuple[int, int]:
-        """Map physical arm (x, y) to grid (col, row) via perpendicular projection.
+    def _arm_pose_to_grid(self, arm_x: float, arm_y: float) -> tuple[float, float]:
+        """Map physical arm (x, y) to continuous grid coordinates.
 
         arm y → column:  left (-0.16) = A(0), right (+0.16) = H(7)
         arm x → row:     close (0.08) = 1(0), far (0.40) = 8(7)
+
+        Returns continuous (col, row) floats clamped to [0, 7].
+        Callers that need discrete squares should round() the result.
         """
         # Normalise to [0, 1] then scale to [0, 7]
         col_f = (arm_y - self.ARM_Y_MIN) / (self.ARM_Y_MAX - self.ARM_Y_MIN) * 7.0
         row_f = (arm_x - self.ARM_X_MIN) / (self.ARM_X_MAX - self.ARM_X_MIN) * 7.0
-        # Clamp and round to nearest square
-        col = max(0, min(7, round(col_f)))
-        row = max(0, min(7, round(row_f)))
-        return col, row
+        # Clamp to grid bounds
+        col_f = max(0.0, min(7.0, col_f))
+        row_f = max(0.0, min(7.0, row_f))
+        return col_f, row_f
 
     def get_position(self) -> ArmPosition:
-        """Read real arm pose and map to grid coordinates."""
+        """Read real arm pose and map to grid coordinates.
+
+        Returns continuous grid coordinates for smooth position tracking.
+        The gripper field is populated from the API if available.
+        """
         try:
             resp = self._session.get(f"{self.arm_url}/api/pose", timeout=1)
             resp.raise_for_status()
             pose = resp.json()
-            col, row = self._arm_pose_to_grid(pose["x"], pose["y"])
-            self._fallback_pos.x = float(col)
-            self._fallback_pos.y = float(row)
-            return ArmPosition(x=float(col), y=float(row), z=0.0)
+            col_f, row_f = self._arm_pose_to_grid(pose["x"], pose["y"])
+            gripper = float(pose.get("gripper", 0.0))
+            self._fallback_pos.x = col_f
+            self._fallback_pos.y = row_f
+            self._fallback_pos.gripper = gripper
+            return ArmPosition(x=col_f, y=row_f, z=0.0, gripper=gripper)
         except Exception as exc:
             logger.debug("Arm pose read failed: %s", exc)
             return self._fallback_pos.copy()

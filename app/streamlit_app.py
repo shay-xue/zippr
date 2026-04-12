@@ -383,7 +383,6 @@ def _init_state() -> None:
         "demo_bit_mode": "Demo Day",  # "Demo Day" or "Rate"
         "rate_sc": 0,                 # Rate-mode success count
         "rate_in_zone": False,        # debounce: arm currently in center zone
-        "rate_last_check": 0.0,       # last 1-second check timestamp
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -430,7 +429,6 @@ def _start_session() -> None:
     # Rate mode reset
     ss["rate_sc"] = 0
     ss["rate_in_zone"] = False
-    ss["rate_last_check"] = 0.0
 
     ss["sc"] = 0
     ss["si"] = 0
@@ -551,7 +549,6 @@ def _reset_session() -> None:
     # Rate mode reset
     ss["rate_sc"] = 0
     ss["rate_in_zone"] = False
-    ss["rate_last_check"] = 0.0
 
 
 # ── Demo Day constants ──────────────────────────────────────────────────────
@@ -608,6 +605,29 @@ def _demo_pick_piece(rng: random.Random) -> str:
 # RATE_CENTER_X, RATE_CENTER_Y, RATE_ZONE_RADIUS, RATE_GRIPPER_MIN
 
 
+def _process_arm_movement(ss: dict) -> None:
+    """Move the arm based on latest decoder events (Demo Day Rate mode only).
+
+    With a real arm the bridge script handles physical movement and we just
+    read position — this is a no-op.  For MockArm we need to explicitly call
+    execute_action() so the simulated arm actually moves on decoder events.
+    """
+    arm = ss.get("arm")
+    client = ss.get("decoder_client")
+    if arm is None or client is None:
+        return
+    # Only needed for MockArm — RealArm position comes from the physical arm
+    if isinstance(arm, RealArm):
+        return
+    frames = client.get_all_since(ss.get("last_decoder_ts", 0.0))
+    if not frames:
+        return
+    ss["last_decoder_ts"] = frames[-1].timestamp
+    for frame in frames:
+        if frame.is_movement and frame.direction:
+            arm.execute_action(frame.direction)
+
+
 def _check_rate_success(ss: dict) -> bool:
     """Check arm position + gripper for Rate mode success (called every ~1 s).
 
@@ -626,21 +646,27 @@ def _check_rate_success(ss: dict) -> bool:
     dist = math.sqrt(dx * dx + dy * dy)
     in_zone = dist <= RATE_ZONE_RADIUS
 
-    # Also check gripper from latest decoder frame
+    # Check gripper state — multiple sources, any one sufficient
     gripper_open = pos.gripper >= RATE_GRIPPER_MIN
 
-    # Fallback: check raw decoder outputs for gripper triggers
     if not gripper_open:
         client = ss.get("decoder_client")
         if client:
             frame = client.get_latest()
             if frame and frame.vector:
                 vec = frame.vector
-                # 12-ch mock: ch10 = trigger left (open), 7-ch synapse: ch4 = lt (open)
                 if len(vec) >= 12:
+                    # 12-ch mock one-hot: ch10 = trigger left (gripper open)
                     gripper_open = abs(vec[10]) > 0
                 elif len(vec) >= 7:
-                    gripper_open = abs(vec[4]) > RATE_GRIPPER_MIN
+                    # 7-ch synapse: ch4 = lt (gripper open), continuous value
+                    gripper_open = abs(float(vec[4])) >= RATE_GRIPPER_MIN
+
+    # MockArm fallback: simulate gripper open when arm reaches center zone.
+    # The mock decoder only emits movement one-hots (never gripper triggers),
+    # so without this the mock arm would never register a placement.
+    if not gripper_open and isinstance(arm, MockArm) and in_zone:
+        gripper_open = True
 
     if in_zone and gripper_open:
         if not ss.get("rate_in_zone"):
@@ -654,7 +680,6 @@ def _check_rate_success(ss: dict) -> bool:
                     "correct": True,
                     "time": time.time() - ss.get("demo_trial_start", time.time()),
                 })
-                ss["sc"] += 1
                 # Auto-advance: clear trial, pick next piece immediately
                 rng = ss.get("rng") or random.Random()
                 ss["demo_target_piece"] = _demo_pick_piece(rng)
@@ -732,8 +757,8 @@ def _process_decoder_events() -> None:
         pos_before = arm.get_position()
         arm.execute_action(direction)
         pos_after = arm.get_position()
-        ss["piece_col"] = int(pos_after.x)
-        ss["piece_row"] = int(pos_after.y)
+        ss["piece_col"] = round(pos_after.x)
+        ss["piece_row"] = round(pos_after.y)
 
         dx = pos_after.x - pos_before.x
         dy = pos_after.y - pos_before.y
@@ -977,8 +1002,9 @@ def _demo_day_panel() -> None:
     trials = ss.get("demo_trials", [])
     is_rate = ss.get("demo_bit_mode") == "Rate"
 
-    # ── Rate mode: run automatic arm/gripper check every tick (~1 s) ──────
+    # ── Rate mode: move mock arm from decoder + run auto-detection ─────
     if is_rate:
+        _process_arm_movement(ss)
         _check_rate_success(ss)
 
     col_board, col_stats = st.columns([1, 1], gap="large")
@@ -1363,6 +1389,7 @@ if ss["session_ended"]:
         if is_demo and is_rate:
             duration = ss.get("final_duration", 0)
             rate_sc = ss.get("rate_sc", 0)
+            trials = ss.get("demo_trials", [])
             st.markdown(
                 f'<div style="font-size:17px;color:#545333;line-height:2;">'
                 f'Mode: Rate (automatic)<br>'
@@ -1376,6 +1403,16 @@ if ss["session_ended"]:
                 f'</div>',
                 unsafe_allow_html=True,
             )
+            if trials:
+                st.markdown("##### Trial History")
+                for i, trial in enumerate(trials):
+                    sym = DEMO_PIECE_SYMBOLS.get(trial["piece"], "?")
+                    st.markdown(
+                        f'<div style="font-size:15px;color:#545333;">'
+                        f'✓ &nbsp;{sym} {trial["piece"]} — {trial["time"]:.1f}s'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
         elif is_demo:
             duration = ss.get("final_duration", 0)
             trials = ss.get("demo_trials", [])

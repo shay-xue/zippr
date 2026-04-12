@@ -360,7 +360,6 @@ arm-set-zero            # Calibrate arm zero position
 - **Manraj Mondair** — Decoder pipeline (v1–v9), Synapse app deployment, system integration
 - **Shay** — RNN decoder analysis, PCA diagnostics, bin-size optimization, v8/v9 evaluation
 - **Medha** — ML comparison pipeline (SVM/XGB/MLP/CNN1D), preprocessing, ZIPPR dashboard UI
-- **Yoyo** — Exploratory data analysis, spectral diagnostics, sklearn baselines
 
 ---
 

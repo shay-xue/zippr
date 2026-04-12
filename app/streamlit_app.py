@@ -50,7 +50,7 @@ from config import (
     USE_MOCK_DECODER,
     USE_REAL_ARM,
 )
-from data_loader import H5DataLoader
+from data_loader import H5DataLoader, MockDataLoader
 from decoder_client import (
     DecoderClient,
     MockDecoderServer,
@@ -458,13 +458,17 @@ def _start_session() -> None:
     try:
         loader = H5DataLoader(buffer_seconds=ss["cfg_time_window"])
         loader.load()
-        loader.start_playback()
-        ss["data_loader"] = loader
-    except Exception as exc:
-        # In live mode, waveforms from .h5 are optional — don't block
-        if ss["cfg_mock_decoder"]:
-            st.warning(f"Data loader: {exc}")
-        ss["data_loader"] = None
+        if loader.neural is not None:
+            loader.start_playback()
+            ss["data_loader"] = loader
+        else:
+            raise FileNotFoundError("No .h5 recordings found")
+    except Exception:
+        # Fall back to synthetic waveforms so the UI always shows data
+        mock_loader = MockDataLoader(buffer_seconds=ss["cfg_time_window"])
+        mock_loader.load()
+        mock_loader.start_playback()
+        ss["data_loader"] = mock_loader
 
     ss["session_running"] = True
     ss["session_ended"] = False

@@ -189,3 +189,102 @@ class H5DataLoader:
             if not self._buffer_ts:
                 return (0.0, 0.0)
             return (self._buffer_ts[0], self._buffer_ts[-1])
+
+
+# ── Mock data loader (synthetic waveforms for demo mode) ────────────────────
+
+class MockDataLoader:
+    """Generates realistic-looking synthetic neural waveforms in real time.
+
+    Produces 64 channels of band-limited noise with occasional spike-like
+    transients, matching the visual character of real broadband neural data.
+    Compatible with the same interface as H5DataLoader.
+    """
+
+    def __init__(
+        self,
+        n_channels: int = N_NEURAL_CHANNELS,
+        sample_rate: int = SAMPLE_RATE_HZ,
+        buffer_seconds: int = BUFFER_SECONDS,
+    ) -> None:
+        self.n_channels = n_channels
+        self.sample_rate = sample_rate
+        self.buffer_seconds = buffer_seconds
+
+        self._buffer: Deque[np.ndarray] = deque()
+        self._buffer_ts: Deque[float] = deque()
+        self._lock = threading.Lock()
+        self._thread: Optional[threading.Thread] = None
+        self._stop = threading.Event()
+        self._rng = np.random.default_rng(42)
+
+        # Per-channel characteristics (amplitude, spike rate)
+        self._amplitudes = self._rng.uniform(0.3, 1.5, size=n_channels).astype(np.float32)
+        self._spike_rates = self._rng.uniform(0.5, 5.0, size=n_channels)  # spikes/sec
+
+    def load(self) -> None:
+        """No-op — synthetic data needs no file loading."""
+        pass
+
+    def start_playback(self, chunk_size_ms: float = 100) -> None:
+        self._stop.clear()
+        self._thread = threading.Thread(
+            target=self._generate_loop, args=(chunk_size_ms,), daemon=True
+        )
+        self._thread.start()
+
+    def stop_playback(self) -> None:
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=5)
+
+    def _generate_loop(self, chunk_size_ms: float) -> None:
+        chunk_samples = int(chunk_size_ms / 1000.0 * self.sample_rate)
+        t0 = time.time()
+
+        while not self._stop.is_set():
+            now = time.time()
+            # Base: band-limited Gaussian noise per channel
+            noise = self._rng.standard_normal(
+                (self.n_channels, chunk_samples)
+            ).astype(np.float32)
+
+            # Scale by per-channel amplitude
+            chunk = noise * self._amplitudes[:, None]
+
+            # Add sparse spike-like transients
+            for ch in range(self.n_channels):
+                n_spikes = self._rng.poisson(
+                    self._spike_rates[ch] * chunk_size_ms / 1000.0
+                )
+                if n_spikes > 0:
+                    spike_locs = self._rng.integers(0, chunk_samples, size=n_spikes)
+                    spike_amps = self._rng.uniform(2.5, 5.0, size=n_spikes)
+                    signs = self._rng.choice([-1.0, 1.0], size=n_spikes)
+                    chunk[ch, spike_locs] += (spike_amps * signs).astype(np.float32)
+
+            with self._lock:
+                self._buffer.append(chunk)
+                self._buffer_ts.append(now)
+                # Trim to buffer_seconds
+                while (
+                    len(self._buffer_ts) > 1
+                    and self._buffer_ts[-1] - self._buffer_ts[0]
+                    > self.buffer_seconds
+                ):
+                    self._buffer.popleft()
+                    self._buffer_ts.popleft()
+
+            time.sleep(chunk_size_ms / 1000.0)
+
+    def get_buffer(self) -> Optional[np.ndarray]:
+        with self._lock:
+            if not self._buffer:
+                return None
+            return np.concatenate(list(self._buffer), axis=1)
+
+    def get_buffer_time_range(self) -> tuple[float, float]:
+        with self._lock:
+            if not self._buffer_ts:
+                return (0.0, 0.0)
+            return (self._buffer_ts[0], self._buffer_ts[-1])

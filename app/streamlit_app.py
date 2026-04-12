@@ -371,6 +371,7 @@ def _init_state() -> None:
         "final_bps": 0.0,
         "final_sc": 0,
         "final_si": 0,
+        "final_targets": 0,
         "final_duration": 0,
         # Demo Day mode state
         "game_mode": "Chess Grid",
@@ -383,6 +384,8 @@ def _init_state() -> None:
         "demo_bit_mode": "Demo Day",  # "Demo Day" or "Rate"
         "rate_sc": 0,                 # Rate-mode success count
         "rate_in_zone": False,        # debounce: arm currently in center zone
+        # Local Play
+        "targets_reached": 0,        # how many targets the claw has reached
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -435,12 +438,14 @@ def _start_session() -> None:
 
     ss["sc"] = 0
     ss["si"] = 0
+    ss["targets_reached"] = 0
     ss["action_overlays"] = []
     ss["last_decoder_ts"] = time.time()
     ss["waveform_page"] = 0
     ss["final_bps"] = 0.0
     ss["final_sc"] = 0
     ss["final_si"] = 0
+    ss["final_targets"] = 0
 
     brc = BitRateCalculator()
     brc.start()
@@ -538,10 +543,12 @@ def _reset_session() -> None:
     ss["session_ended"] = False
     ss["sc"] = 0
     ss["si"] = 0
+    ss["targets_reached"] = 0
     ss["action_overlays"] = []
     ss["final_bps"] = 0.0
     ss["final_sc"] = 0
     ss["final_si"] = 0
+    ss["final_targets"] = 0
     ss["final_duration"] = 0
     # Demo Day reset
     ss["demo_target_piece"] = None
@@ -792,7 +799,25 @@ def _process_decoder_events() -> None:
         dy = pos_after.y - pos_before.y
         dz = pos_after.z - pos_before.z
 
-        correct = (direction == target_dir) if target_dir is not None else False
+        # Scoring: Local Play uses lenient scoring — any move that reduces
+        # distance to the target counts as correct (2 of 4 directions are
+        # valid when not on the same row/col as the target).  Chess Grid
+        # keeps strict single-optimal-direction scoring.
+        is_local = ss.get("game_mode") == "Local Play"
+        if is_local and target_dir is not None:
+            dc = ss["target_col"] - round(pos_before.x)
+            dr = ss["target_row"] - round(pos_before.y)
+            correct = False
+            if direction == "RIGHT" and dc > 0:
+                correct = True
+            elif direction == "LEFT" and dc < 0:
+                correct = True
+            elif direction == "UP" and dr > 0:
+                correct = True
+            elif direction == "DOWN" and dr < 0:
+                correct = True
+        else:
+            correct = (direction == target_dir) if target_dir is not None else False
 
         if correct:
             brc.record_correct()
@@ -834,6 +859,7 @@ def _process_decoder_events() -> None:
 
         # Pick new target when piece reaches it
         if ss["piece_col"] == ss["target_col"] and ss["piece_row"] == ss["target_row"]:
+            ss["targets_reached"] = ss.get("targets_reached", 0) + 1
             t_col, t_row = pick_random_target(rng)
             ss["target_col"] = t_col
             ss["target_row"] = t_row
@@ -886,6 +912,7 @@ def _end_session() -> None:
         ss["final_bps"] = brc.get_current_bps() if brc else 0.0
         ss["final_sc"] = ss["sc"]
         ss["final_si"] = ss["si"]
+    ss["final_targets"] = ss.get("targets_reached", 0)
     if ss.get("decoder_client"):
         try:
             ss["decoder_client"].stop()
@@ -935,7 +962,36 @@ def _game_panel() -> None:
     is_local = ss.get("game_mode") == "Local Play"
     claw = "🦀" if is_local else "♟"
     with col_chess:
-        st.markdown(f'#### {"Local Play" if is_local else "Chess Grid"}')
+        if is_local:
+            st.markdown("#### Local Play")
+            # Direction arrow — show which way the claw needs to go
+            dc = ss["target_col"] - ss["piece_col"]
+            dr = ss["target_row"] - ss["piece_row"]
+            arrows = []
+            if dc > 0:
+                arrows.append("→")
+            elif dc < 0:
+                arrows.append("←")
+            if dr > 0:
+                arrows.append("↑")
+            elif dr < 0:
+                arrows.append("↓")
+            arrow_str = " ".join(arrows) if arrows else "✦"
+            targets = ss.get("targets_reached", 0)
+            st.markdown(
+                f'<div style="text-align:center;margin-bottom:4px;">'
+                f'<span style="font-family:VT323,monospace;font-size:22px;color:#545333;">'
+                f'Move {arrow_str} toward the target'
+                f'</span>'
+                f'<span style="font-family:VT323,monospace;font-size:22px;color:#878672;">'
+                f' &nbsp;·&nbsp; Targets: {targets}'
+                f'</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown("#### Chess Grid")
+
         grid_html = render_grid_html(
             piece_col=ss["piece_col"],
             piece_row=ss["piece_row"],
@@ -977,13 +1033,36 @@ def _game_panel() -> None:
 
         total = ss["sc"] + ss["si"]
         acc = (ss["sc"] / total * 100) if total > 0 else 0.0
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric("✓ Correct", ss["sc"])
-        with c2:
-            st.metric("✗ Wrong", ss["si"])
-        with c3:
-            st.metric("Accuracy", f"{acc:.0f}%")
+
+        if is_local:
+            targets = ss.get("targets_reached", 0)
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                st.metric("⚑ Targets", targets)
+            with c2:
+                st.metric("✓ Correct", ss["sc"])
+            with c3:
+                st.metric("✗ Wrong", ss["si"])
+            with c4:
+                st.metric("Accuracy", f"{acc:.0f}%")
+
+            # Objective explanation
+            st.markdown(
+                f'<div style="font-size:14px;color:#878672;line-height:1.7;margin-top:4px;">'
+                f'<b>Objective:</b> Navigate the claw to each target square.<br>'
+                f'<b>Scoring:</b> Any move toward the target = correct.<br>'
+                f'<b>Formula:</b> B = log₂(64) × max(Sc−Si, 0) / {SESSION_DURATION}s'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("✓ Correct", ss["sc"])
+            with c2:
+                st.metric("✗ Wrong", ss["si"])
+            with c3:
+                st.metric("Accuracy", f"{acc:.0f}%")
 
         # Timeline sparkline
         if logger_inst and logger_inst.events:
@@ -1360,7 +1439,7 @@ if not ss["session_running"] and not ss["session_ended"]:
         unsafe_allow_html=True,
     )
     if is_local:
-        subtitle = 'software-only &nbsp;·&nbsp; navigate the 🦀 claw to each target &nbsp;·&nbsp; 60-second session'
+        subtitle = 'Use the neural decoder to move 🦀 toward targets &nbsp;·&nbsp; any move closer = correct &nbsp;·&nbsp; 60 seconds'
     elif is_demo and is_rate:
         subtitle = 'automatic detection &nbsp;·&nbsp; arm position + gripper &nbsp;·&nbsp; press END to finish'
     elif is_demo:
@@ -1412,6 +1491,19 @@ if ss["session_ended"]:
             with c2:
                 duration = ss.get("final_duration", 0)
                 st.metric("Duration", f"{int(duration)}s")
+        elif is_local:
+            total = final_sc + final_si
+            acc   = (final_sc / total * 100) if total > 0 else 0.0
+            final_targets = ss.get("final_targets", 0)
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                st.metric("⚑ Targets", final_targets)
+            with c2:
+                st.metric("✓ Correct", final_sc)
+            with c3:
+                st.metric("✗ Wrong", final_si)
+            with c4:
+                st.metric("Accuracy", f"{acc:.0f}%")
         else:
             total = final_sc + final_si
             acc   = (final_sc / total * 100) if total > 0 else 0.0
@@ -1476,12 +1568,35 @@ if ss["session_ended"]:
                         f'</div>',
                         unsafe_allow_html=True,
                     )
-        else:
-            mode_label = "Local Play (software)" if is_local else "Chess Grid"
+        elif is_local:
+            final_targets = ss.get("final_targets", 0)
             logger_inst: Optional[SessionLogger] = ss.get("logger")
             st.markdown(
                 f'<div style="font-size:17px;color:#545333;line-height:2;">'
-                f'Mode: {mode_label}<br>'
+                f'Mode: Local Play (software)<br>'
+                f'Targets reached: {final_targets}<br>'
+                f'N = {N_SQUARES} squares &nbsp;·&nbsp; '
+                f'log₂(N) = {LOG2_N:.1f}<br>'
+                f'Formula: B = log₂(N)×max(Sc−Si,0)/t<br>'
+                f'Duration: {SESSION_DURATION}s<br>'
+                f'<span style="font-size:13px;opacity:0.7;">'
+                f'Scoring: any move toward the target = correct</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            if logger_inst:
+                csv_data = logger_inst.to_csv_string()
+                st.download_button(
+                    "📥 Export CSV",
+                    data=csv_data,
+                    file_name="zippr_local_play_log.csv",
+                    mime="text/csv",
+                )
+        else:
+            logger_inst: Optional[SessionLogger] = ss.get("logger")
+            st.markdown(
+                f'<div style="font-size:17px;color:#545333;line-height:2;">'
+                f'Mode: Chess Grid<br>'
                 f'N = {N_SQUARES} squares<br>'
                 f'log₂(N) = {LOG2_N:.1f} bits/correct<br>'
                 f'Formula: B = log₂(N)×max(Sc−Si,0)/t<br>'

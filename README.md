@@ -1,4 +1,8 @@
 <p align="center">
+  <a href="https://science-neurotech.streamlit.app"><img src="https://img.shields.io/badge/Live_Demo-ZIPPR_Dashboard-545333?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"></a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/R%C2%B2-0.847-brightgreen?style=for-the-badge" alt="R²">
   <img src="https://img.shields.io/badge/Latency-16ms-blue?style=for-the-badge" alt="Latency">
   <img src="https://img.shields.io/badge/Params-467K-orange?style=for-the-badge" alt="Parameters">
@@ -207,6 +211,8 @@ This projection layer is modular — swapping it out adapts the arm to any spati
 ---
 
 ## ZIPPR Dashboard
+
+> **[Try the live demo](https://science-neurotech.streamlit.app)** — runs fully in-browser with mock decoder and simulated arm (no hardware needed).
 
 The Streamlit-based real-time interface provides:
 

@@ -1,0 +1,29 @@
+{
+  "seq_len": 30,
+  "bin_ms": 10,
+  "feature_type": "track_a",
+  "sigma_thresholds": [
+    3.0,
+    4.0,
+    5.0
+  ],
+  "n_features": 192,
+  "hidden_size": 192,
+  "n_layers": 2,
+  "dropout": 0.3,
+  "sample_rate": 32000,
+  "bandpass_hz": [
+    200,
+    5000
+  ],
+  "joy_r2_avg": 0.39637458324432373,
+  "joy_r2_per": [
+    0.5416908860206604,
+    -0.16966712474822998,
+    0.5076571702957153,
+    0.7058174014091492
+  ],
+  "trig_r2_avg": 0.1191290020942688,
+  "gate_acc": 0.8852173913043478,
+  "xgb_baseline": null
+}

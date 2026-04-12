@@ -1,0 +1,37 @@
+{
+  "gru": {
+    "joy_r2": 0.311118483543396,
+    "trig_r2": 0.2744201421737671,
+    "gate_acc": 0.7980132450331126,
+    "epoch": 3,
+    "joy_r2_per_axis": [
+      0.2913714647293091,
+      0.3129691481590271,
+      0.3659551739692688,
+      0.2741723656654358
+    ]
+  },
+  "config": {
+    "seq_len": 15,
+    "hidden_size": 192,
+    "n_layers": 2,
+    "dropout": 0.3,
+    "lr": 0.0005,
+    "batch_size": 128,
+    "bin_ms": 10,
+    "feature_type": "spike_counts_3thresh",
+    "transition_weight": 5.0,
+    "fixes": [
+      "shorter_seq_15",
+      "transition_weighted_loss",
+      "temporal_attention"
+    ]
+  },
+  "data": {
+    "n_train_files": 26,
+    "n_val_files": 6,
+    "n_train_bins": 57504,
+    "n_val_bins": 9116
+  },
+  "total_time": 793.3401701450348
+}

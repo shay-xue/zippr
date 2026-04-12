@@ -1,0 +1,64 @@
+{
+  "model_type": "gru",
+  "input_dim": 192,
+  "input_shape": [
+    1,
+    192,
+    30
+  ],
+  "input_convention": "(batch, n_features, seq_len) \u2014 transposed internally",
+  "output_shape": [
+    1,
+    7
+  ],
+  "seq_len": 30,
+  "bin_ms": 10,
+  "sample_rate": 32000,
+  "hidden_size": 192,
+  "n_layers": 2,
+  "feature_type": "spike_counts_3thresh",
+  "sigma_thresholds": [
+    3.0,
+    4.0,
+    5.0
+  ],
+  "output_names": [
+    "joy_x",
+    "joy_y",
+    "rot",
+    "depth",
+    "lt",
+    "rt",
+    "gate"
+  ],
+  "output_ranges": [
+    [
+      -1,
+      1
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ]
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "nodes": {
+    "1": {
+      "type": "kBroadbandSource",
+      "peripheral_id": 100,
+      "sample_rate_hz": 32000,
+      "bit_width": 12,
+      "channels": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+      "electrode_filtering": "57 Hz - 13.5 kHz"
+    },
+    "2": {
+      "type": "kApplication",
+      "executable": "synapse-example-app",
+      "low_cutoff_hz": 200.0,
+      "high_cutoff_hz": 5000.0,
+      "spike_threshold_uv": 50,
+      "cursor_channels": [0, 7, 16, 30],
+      "inference_enabled": true,
+      "model_name": "decoder"
+    }
+  },
+  "edges": [
+    {"from": "1", "to": "2"}
+  ]
+}

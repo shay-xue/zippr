@@ -1,0 +1,334 @@
+{
+  "run_name": "Run 001 \u2014 Idle Baseline",
+  "description": "Controller connected but no joystick movement. 10-second recording to establish neural data baseline.",
+  "h5_filename": "broadband_data_20260410_142940.h5",
+  "session_start": "2026-04-10T14:29:40.828060",
+  "sample_rate_hz": 32000,
+  "duration_seconds": 6.71,
+  "total_samples": 214686,
+  "total_channels": 35,
+  "neural_channels": 32,
+  "label_channels": 3,
+  "label_channel_roles": {
+    "32": "discrete (1 values)",
+    "33": "discrete (1 values)",
+    "34": "discrete (1 values)"
+  },
+  "channel_stats": [
+    {
+      "channel": 0,
+      "electrode_id": 0,
+      "min": -329,
+      "max": 106,
+      "mean": -0.25,
+      "std": 17.07,
+      "unique_values": 331
+    },
+    {
+      "channel": 1,
+      "electrode_id": 1,
+      "min": -326,
+      "max": 92,
+      "mean": -0.23,
+      "std": 16.97,
+      "unique_values": 326
+    },
+    {
+      "channel": 2,
+      "electrode_id": 2,
+      "min": -324,
+      "max": 99,
+      "mean": -0.22,
+      "std": 16.57,
+      "unique_values": 316
+    },
+    {
+      "channel": 3,
+      "electrode_id": 3,
+      "min": -327,
+      "max": 92,
+      "mean": -0.31,
+      "std": 17.29,
+      "unique_values": 345
+    },
+    {
+      "channel": 4,
+      "electrode_id": 4,
+      "min": -326,
+      "max": 106,
+      "mean": -0.24,
+      "std": 16.93,
+      "unique_values": 320
+    },
+    {
+      "channel": 5,
+      "electrode_id": 5,
+      "min": -338,
+      "max": 103,
+      "mean": -0.22,
+      "std": 16.74,
+      "unique_values": 319
+    },
+    {
+      "channel": 6,
+      "electrode_id": 6,
+      "min": -330,
+      "max": 94,
+      "mean": -0.19,
+      "std": 17.07,
+      "unique_values": 331
+    },
+    {
+      "channel": 7,
+      "electrode_id": 7,
+      "min": -327,
+      "max": 101,
+      "mean": -0.18,
+      "std": 16.5,
+      "unique_values": 298
+    },
+    {
+      "channel": 8,
+      "electrode_id": 8,
+      "min": -322,
+      "max": 98,
+      "mean": -0.22,
+      "std": 16.48,
+      "unique_values": 292
+    },
+    {
+      "channel": 9,
+      "electrode_id": 9,
+      "min": -324,
+      "max": 96,
+      "mean": -0.21,
+      "std": 16.52,
+      "unique_values": 309
+    },
+    {
+      "channel": 10,
+      "electrode_id": 10,
+      "min": -314,
+      "max": 97,
+      "mean": -0.19,
+      "std": 16.2,
+      "unique_values": 285
+    },
+    {
+      "channel": 11,
+      "electrode_id": 11,
+      "min": -332,
+      "max": 101,
+      "mean": -0.17,
+      "std": 16.54,
+      "unique_values": 300
+    },
+    {
+      "channel": 12,
+      "electrode_id": 12,
+      "min": -338,
+      "max": 93,
+      "mean": -0.2,
+      "std": 16.52,
+      "unique_values": 308
+    },
+    {
+      "channel": 13,
+      "electrode_id": 13,
+      "min": -337,
+      "max": 98,
+      "mean": -0.24,
+      "std": 16.59,
+      "unique_values": 311
+    },
+    {
+      "channel": 14,
+      "electrode_id": 14,
+      "min": -332,
+      "max": 105,
+      "mean": -0.27,
+      "std": 17.09,
+      "unique_values": 329
+    },
+    {
+      "channel": 15,
+      "electrode_id": 15,
+      "min": -331,
+      "max": 102,
+      "mean": -0.24,
+      "std": 16.71,
+      "unique_values": 310
+    },
+    {
+      "channel": 16,
+      "electrode_id": 16,
+      "min": -334,
+      "max": 104,
+      "mean": -0.3,
+      "std": 17.48,
+      "unique_values": 346
+    },
+    {
+      "channel": 17,
+      "electrode_id": 17,
+      "min": -330,
+      "max": 96,
+      "mean": -0.27,
+      "std": 16.81,
+      "unique_values": 317
+    },
+    {
+      "channel": 18,
+      "electrode_id": 18,
+      "min": -323,
+      "max": 96,
+      "mean": -0.25,
+      "std": 16.82,
+      "unique_values": 320
+    },
+    {
+      "channel": 19,
+      "electrode_id": 19,
+      "min": -326,
+      "max": 106,
+      "mean": -0.28,
+      "std": 17.14,
+      "unique_values": 321
+    },
+    {
+      "channel": 20,
+      "electrode_id": 20,
+      "min": -336,
+      "max": 92,
+      "mean": -0.2,
+      "std": 16.88,
+      "unique_values": 320
+    },
+    {
+      "channel": 21,
+      "electrode_id": 21,
+      "min": -345,
+      "max": 96,
+      "mean": -0.28,
+      "std": 16.95,
+      "unique_values": 333
+    },
+    {
+      "channel": 22,
+      "electrode_id": 22,
+      "min": -330,
+      "max": 93,
+      "mean": -0.25,
+      "std": 17.0,
+      "unique_values": 317
+    },
+    {
+      "channel": 23,
+      "electrode_id": 23,
+      "min": -321,
+      "max": 109,
+      "mean": -0.22,
+      "std": 16.56,
+      "unique_values": 298
+    },
+    {
+      "channel": 24,
+      "electrode_id": 24,
+      "min": -339,
+      "max": 104,
+      "mean": -0.23,
+      "std": 16.62,
+      "unique_values": 316
+    },
+    {
+      "channel": 25,
+      "electrode_id": 25,
+      "min": -331,
+      "max": 104,
+      "mean": -0.19,
+      "std": 16.24,
+      "unique_values": 292
+    },
+    {
+      "channel": 26,
+      "electrode_id": 26,
+      "min": -320,
+      "max": 107,
+      "mean": -0.18,
+      "std": 16.7,
+      "unique_values": 304
+    },
+    {
+      "channel": 27,
+      "electrode_id": 27,
+      "min": -325,
+      "max": 103,
+      "mean": -0.18,
+      "std": 16.81,
+      "unique_values": 325
+    },
+    {
+      "channel": 28,
+      "electrode_id": 28,
+      "min": -327,
+      "max": 101,
+      "mean": -0.17,
+      "std": 16.27,
+      "unique_values": 287
+    },
+    {
+      "channel": 29,
+      "electrode_id": 29,
+      "min": -324,
+      "max": 98,
+      "mean": -0.18,
+      "std": 16.2,
+      "unique_values": 283
+    },
+    {
+      "channel": 30,
+      "electrode_id": 30,
+      "min": -324,
+      "max": 117,
+      "mean": -0.24,
+      "std": 17.16,
+      "unique_values": 336
+    },
+    {
+      "channel": 31,
+      "electrode_id": 31,
+      "min": -343,
+      "max": 100,
+      "mean": -0.26,
+      "std": 17.05,
+      "unique_values": 339
+    },
+    {
+      "channel": 32,
+      "electrode_id": 32,
+      "min": 0,
+      "max": 0,
+      "mean": 0.0,
+      "std": 0.0,
+      "unique_values": 1
+    },
+    {
+      "channel": 33,
+      "electrode_id": 33,
+      "min": 0,
+      "max": 0,
+      "mean": 0.0,
+      "std": 0.0,
+      "unique_values": 1
+    },
+    {
+      "channel": 34,
+      "electrode_id": 34,
+      "min": 0,
+      "max": 0,
+      "mean": 0.0,
+      "std": 0.0,
+      "unique_values": 1
+    }
+  ]
+}

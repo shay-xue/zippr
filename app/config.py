@@ -11,10 +11,10 @@ import os
 
 # ── Decoder websocket ────────────────────────────────────────────────────────
 DECODER_WS_URL: str = "ws://localhost:8765"
-USE_MOCK_DECODER: bool = False
+USE_MOCK_DECODER: bool = os.getenv("USE_MOCK_DECODER", "true").lower() in ("1", "true", "yes")
 
 # ── Arm ──────────────────────────────────────────────────────────────────────
-USE_REAL_ARM: bool = True
+USE_REAL_ARM: bool = os.getenv("USE_REAL_ARM", "false").lower() in ("1", "true", "yes")
 
 # ── SciFi device (live mode) ─────────────────────────────────────────────────
 SCIFI_DEVICE_IP: str = "192.168.8.123"

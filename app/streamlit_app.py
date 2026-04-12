@@ -375,6 +375,11 @@ def _init_state() -> None:
         "demo_awaiting_confirm": False,
         "demo_trial_start": 0.0,
         "demo_trials": [],       # list of {"piece", "correct", "time"}
+        # Rate mode (automatic bit rate via arm position + gripper)
+        "demo_bit_mode": "Demo Day",  # "Demo Day" or "Rate"
+        "rate_sc": 0,                 # Rate-mode success count
+        "rate_in_zone": False,        # debounce: arm currently in center zone
+        "rate_last_check": 0.0,       # last 1-second check timestamp
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -391,18 +396,20 @@ def _start_session() -> None:
     is_demo = ss.get("game_mode") == "Demo Day"
     ss["rng"] = random.Random(RANDOM_SEED)
 
-    # Arm + grid setup (Chess Grid only)
-    if not is_demo:
-        if ss["cfg_real_arm"]:
-            try:
-                arm = RealArm(arm_url=ARM_API_URL, start_col=0, start_row=0)
-                arm.get_position()  # probe
-                ss["arm"] = arm
-            except Exception as exc:
-                st.warning(f"Real Arm failed ({exc}) — falling back to Mock Arm.")
-                ss["arm"] = MockArm(start_col=0, start_row=0)
-        else:
+    # Arm setup — needed for Chess Grid and Demo Day Rate mode
+    if ss["cfg_real_arm"]:
+        try:
+            arm = RealArm(arm_url=ARM_API_URL, start_col=0, start_row=0)
+            arm.get_position()  # probe
+            ss["arm"] = arm
+        except Exception as exc:
+            st.warning(f"Real Arm failed ({exc}) — falling back to Mock Arm.")
             ss["arm"] = MockArm(start_col=0, start_row=0)
+    else:
+        ss["arm"] = MockArm(start_col=0, start_row=0)
+
+    # Grid-specific setup (Chess Grid only)
+    if not is_demo:
         ss["piece_col"] = 0
         ss["piece_row"] = 0
         t_col, t_row = pick_random_target(ss["rng"])
@@ -416,6 +423,10 @@ def _start_session() -> None:
     ss["demo_awaiting_confirm"] = False
     ss["demo_trial_start"] = 0.0
     ss["demo_trials"] = []
+    # Rate mode reset
+    ss["rate_sc"] = 0
+    ss["rate_in_zone"] = False
+    ss["rate_last_check"] = 0.0
 
     ss["sc"] = 0
     ss["si"] = 0
@@ -533,6 +544,10 @@ def _reset_session() -> None:
     ss["demo_awaiting_confirm"] = False
     ss["demo_trial_start"] = 0.0
     ss["demo_trials"] = []
+    # Rate mode reset
+    ss["rate_sc"] = 0
+    ss["rate_in_zone"] = False
+    ss["rate_last_check"] = 0.0
 
 
 # ── Demo Day constants ──────────────────────────────────────────────────────
@@ -583,6 +598,57 @@ def _demo_pick_piece(rng: random.Random) -> str:
     return rng.choice(DEMO_PIECES)
 
 
+# ── Rate mode constants ─────────────────────────────────────────────────────
+# Center of the 8×8 board in grid coordinates
+RATE_CENTER_X: float = 3.5
+RATE_CENTER_Y: float = 3.5
+RATE_ZONE_RADIUS: float = 1.5     # arm within 1.5 squares of center = "in zone"
+RATE_GRIPPER_MIN: float = 0.10    # gripper must be ≥10% open
+
+
+def _check_rate_success(ss: dict) -> None:
+    """Check arm position + gripper for Rate mode success (called every ~1 s).
+
+    Success: arm within center zone AND gripper ≥ 10% open.
+    Biased higher: never increments Si — only counts successes.
+    Debounced: once counted, won't recount until arm leaves the zone.
+    """
+    arm = ss.get("arm")
+    if arm is None:
+        return
+
+    pos = arm.get_position()
+    dx = pos.x - RATE_CENTER_X
+    dy = pos.y - RATE_CENTER_Y
+    dist = math.sqrt(dx * dx + dy * dy)
+    in_zone = dist <= RATE_ZONE_RADIUS
+
+    # Also check gripper from latest decoder frame
+    gripper_open = pos.gripper >= RATE_GRIPPER_MIN
+
+    # Fallback: check raw decoder outputs for gripper triggers
+    if not gripper_open:
+        client = ss.get("decoder_client")
+        if client:
+            frame = client.get_latest()
+            if frame and frame.vector:
+                vec = frame.vector
+                # 12-ch mock: ch10 = trigger left (open), 7-ch synapse: ch4 = lt (open)
+                if len(vec) >= 12:
+                    gripper_open = abs(vec[10]) > 0
+                elif len(vec) >= 7:
+                    gripper_open = abs(vec[4]) > RATE_GRIPPER_MIN
+
+    if in_zone and gripper_open:
+        if not ss.get("rate_in_zone"):
+            # First time entering zone with gripper open → success
+            ss["rate_sc"] = ss.get("rate_sc", 0) + 1
+            ss["rate_in_zone"] = True
+    else:
+        # Arm left zone or gripper closed — reset debounce
+        ss["rate_in_zone"] = False
+
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
@@ -590,6 +656,12 @@ with st.sidebar:
     st.markdown("---")
     game_mode = st.radio("Game Mode", ["Chess Grid", "Demo Day"], horizontal=True, key="sb_game_mode")
     st.session_state["game_mode"] = game_mode
+    if game_mode == "Demo Day":
+        bit_mode = st.radio(
+            "Bit Rate", ["Demo Day", "Rate"], horizontal=True, key="sb_bit_mode",
+            help="Demo Day: manual yes/no. Rate: automatic arm position + gripper detection.",
+        )
+        st.session_state["demo_bit_mode"] = bit_mode
     mode = st.radio("Mode", ["Playback", "Live"], horizontal=True)
     time_window = st.slider("Time window (s)", 1, 10, BUFFER_SECONDS, key="sb_tw")
     st.session_state["cfg_time_window"] = time_window
@@ -726,15 +798,22 @@ def _end_session() -> None:
     ss["final_duration"] = elapsed
 
     is_demo = ss.get("game_mode") == "Demo Day"
-    if is_demo:
-        t = elapsed if elapsed > 0 else 1.0
+    is_rate = ss.get("demo_bit_mode") == "Rate"
+    t = elapsed if elapsed > 0 else 1.0
+
+    if is_demo and is_rate:
+        ss["final_bps"] = DEMO_LOG2_N * ss.get("rate_sc", 0) / t
+        ss["final_sc"] = ss.get("rate_sc", 0)
+        ss["final_si"] = 0
+    elif is_demo:
         ss["final_bps"] = DEMO_LOG2_N * max(ss["sc"] - ss["si"], 0) / t
+        ss["final_sc"] = ss["sc"]
+        ss["final_si"] = ss["si"]
     else:
         brc: Optional[BitRateCalculator] = ss.get("bit_rate")
         ss["final_bps"] = brc.get_current_bps() if brc else 0.0
-
-    ss["final_sc"] = ss["sc"]
-    ss["final_si"] = ss["si"]
+        ss["final_sc"] = ss["sc"]
+        ss["final_si"] = ss["si"]
     if ss.get("decoder_client"):
         try:
             ss["decoder_client"].stop()
@@ -877,150 +956,196 @@ def _demo_day_panel() -> None:
 
     elapsed = time.time() - ss["session_start_time"]
     trials = ss.get("demo_trials", [])
+    is_rate = ss.get("demo_bit_mode") == "Rate"
+
+    # ── Rate mode: run automatic arm/gripper check every tick (~1 s) ──────
+    if is_rate:
+        _check_rate_success(ss)
 
     col_board, col_stats = st.columns([1, 1], gap="large")
 
     # ── LEFT: wooden board + piece prompt ─────────────────────────────────
     with col_board:
-        # Show which piece to pick up
-        if ss.get("demo_target_piece") and ss.get("demo_trial_active"):
-            piece = ss["demo_target_piece"]
-            symbol = DEMO_PIECE_SYMBOLS[piece]
+        if is_rate:
+            # Rate mode: show arm position status instead of piece prompts
+            arm = ss.get("arm")
+            pos = arm.get_position() if arm else None
+            in_zone = ss.get("rate_in_zone", False)
+            zone_icon = "🟢" if in_zone else "⚪"
+            pos_str = f"({pos.x:.1f}, {pos.y:.1f})" if pos else "(—, —)"
             st.markdown(
                 f'<div style="text-align:center;margin-bottom:12px;">'
-                f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
-                f'Pick up the &nbsp;</span>'
-                f'<span style="font-size:48px;">{symbol}</span>'
-                f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
-                f'&nbsp; {piece}</span>'
+                f'<span style="font-family:VT323,monospace;font-size:24px;color:#545333;">'
+                f'{zone_icon} Arm {pos_str} &nbsp;·&nbsp; '
+                f'Zone: {"IN" if in_zone else "OUT"}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
-        elif ss.get("demo_awaiting_confirm"):
-            st.markdown(
-                '<div style="text-align:center;margin-bottom:12px;">'
-                '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
-                'Did you place it correctly?</span>'
-                '</div>',
-                unsafe_allow_html=True,
-            )
         else:
-            st.markdown(
-                '<div style="text-align:center;margin-bottom:12px;">'
-                '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
-                'Press NEXT PIECE to begin a trial</span>'
-                '</div>',
-                unsafe_allow_html=True,
-            )
+            # Demo Day mode: show piece prompts
+            if ss.get("demo_target_piece") and ss.get("demo_trial_active"):
+                piece = ss["demo_target_piece"]
+                symbol = DEMO_PIECE_SYMBOLS[piece]
+                st.markdown(
+                    f'<div style="text-align:center;margin-bottom:12px;">'
+                    f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
+                    f'Pick up the &nbsp;</span>'
+                    f'<span style="font-size:48px;">{symbol}</span>'
+                    f'<span style="font-family:VT323,monospace;font-size:28px;color:#545333;">'
+                    f'&nbsp; {piece}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+            elif ss.get("demo_awaiting_confirm"):
+                st.markdown(
+                    '<div style="text-align:center;margin-bottom:12px;">'
+                    '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
+                    'Did you place it correctly?</span>'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<div style="text-align:center;margin-bottom:12px;">'
+                    '<span style="font-family:VT323,monospace;font-size:24px;color:#878672;">'
+                    'Press NEXT PIECE to begin a trial</span>'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
 
         components.html(_render_demo_board(), height=420)
 
-        # Action buttons below the board
-        if ss.get("demo_awaiting_confirm"):
-            b1, b2 = st.columns(2)
-            with b1:
-                if st.button("✓  YES", key="demo_yes", use_container_width=True):
-                    ss["demo_trials"].append({
-                        "piece": ss["demo_target_piece"],
-                        "correct": True,
-                        "time": time.time() - ss["demo_trial_start"],
-                    })
-                    ss["sc"] += 1
-                    brc = ss.get("bit_rate")
-                    if brc:
-                        brc.record_correct()
-                    ss["demo_awaiting_confirm"] = False
-                    ss["demo_trial_active"] = False
-                    ss["demo_target_piece"] = None
-                    st.rerun()
-            with b2:
-                if st.button("✗  NO", key="demo_no", use_container_width=True):
-                    ss["demo_trials"].append({
-                        "piece": ss["demo_target_piece"],
-                        "correct": False,
-                        "time": time.time() - ss["demo_trial_start"],
-                    })
-                    ss["si"] += 1
-                    brc = ss.get("bit_rate")
-                    if brc:
-                        brc.record_incorrect()
-                    ss["demo_awaiting_confirm"] = False
-                    ss["demo_trial_active"] = False
-                    ss["demo_target_piece"] = None
-                    st.rerun()
-        elif ss.get("demo_trial_active"):
-            _, cb, _ = st.columns([1, 2, 1])
-            with cb:
-                if st.button("✓  PLACED IT", key="demo_placed", use_container_width=True):
-                    ss["demo_trial_active"] = False
-                    ss["demo_awaiting_confirm"] = True
-                    st.rerun()
-        else:
-            _, cb, _ = st.columns([1, 2, 1])
-            with cb:
-                if st.button("▶  NEXT PIECE", key="demo_next", use_container_width=True):
-                    rng = ss.get("rng") or random.Random()
-                    ss["demo_target_piece"] = _demo_pick_piece(rng)
-                    ss["demo_trial_active"] = True
-                    ss["demo_awaiting_confirm"] = False
-                    ss["demo_trial_start"] = time.time()
-                    st.rerun()
+        # Action buttons below the board (Demo Day manual mode only)
+        if not is_rate:
+            if ss.get("demo_awaiting_confirm"):
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("✓  YES", key="demo_yes", use_container_width=True):
+                        ss["demo_trials"].append({
+                            "piece": ss["demo_target_piece"],
+                            "correct": True,
+                            "time": time.time() - ss["demo_trial_start"],
+                        })
+                        ss["sc"] += 1
+                        brc = ss.get("bit_rate")
+                        if brc:
+                            brc.record_correct()
+                        ss["demo_awaiting_confirm"] = False
+                        ss["demo_trial_active"] = False
+                        ss["demo_target_piece"] = None
+                        st.rerun()
+                with b2:
+                    if st.button("✗  NO", key="demo_no", use_container_width=True):
+                        ss["demo_trials"].append({
+                            "piece": ss["demo_target_piece"],
+                            "correct": False,
+                            "time": time.time() - ss["demo_trial_start"],
+                        })
+                        ss["si"] += 1
+                        brc = ss.get("bit_rate")
+                        if brc:
+                            brc.record_incorrect()
+                        ss["demo_awaiting_confirm"] = False
+                        ss["demo_trial_active"] = False
+                        ss["demo_target_piece"] = None
+                        st.rerun()
+            elif ss.get("demo_trial_active"):
+                _, cb, _ = st.columns([1, 2, 1])
+                with cb:
+                    if st.button("✓  PLACED IT", key="demo_placed", use_container_width=True):
+                        ss["demo_trial_active"] = False
+                        ss["demo_awaiting_confirm"] = True
+                        st.rerun()
+            else:
+                _, cb, _ = st.columns([1, 2, 1])
+                with cb:
+                    if st.button("▶  NEXT PIECE", key="demo_next", use_container_width=True):
+                        rng = ss.get("rng") or random.Random()
+                        ss["demo_target_piece"] = _demo_pick_piece(rng)
+                        ss["demo_trial_active"] = True
+                        ss["demo_awaiting_confirm"] = False
+                        ss["demo_trial_start"] = time.time()
+                        st.rerun()
 
-    # ── RIGHT: bit rate + trial stats ─────────────────────────────────────
+    # ── RIGHT: bit rate + stats ───────────────────────────────────────────
     with col_stats:
         st.markdown("#### Live Bit Rate")
 
-        brc = ss.get("bit_rate")
-        bps = brc.get_current_bps() if brc else 0.0
-        # Override with Demo Day formula: log2(4) instead of log2(64)
         t = elapsed if elapsed > 0 else 1.0
-        demo_bps = DEMO_LOG2_N * max(ss["sc"] - ss["si"], 0) / t
 
-        if demo_bps > 1.0:
+        if is_rate:
+            # Rate mode: B = log2(N) × Sc / t  (no Si — biased higher)
+            rate_sc = ss.get("rate_sc", 0)
+            live_bps = DEMO_LOG2_N * rate_sc / t
+        else:
+            # Demo Day mode: B = log2(N) × max(Sc − Si, 0) / t
+            live_bps = DEMO_LOG2_N * max(ss["sc"] - ss["si"], 0) / t
+
+        if live_bps > 1.0:
             bps_color = "#545333"
-        elif demo_bps >= 0.3:
+        elif live_bps >= 0.3:
             bps_color = "#878672"
         else:
             bps_color = "#030302"
 
         st.markdown(
-            f'<div class="bps-number" style="color:{bps_color};">{demo_bps:.2f}</div>'
+            f'<div class="bps-number" style="color:{bps_color};">{live_bps:.2f}</div>'
             f'<div class="bps-unit">bits / sec</div>',
             unsafe_allow_html=True,
         )
         st.markdown('<hr style="margin:8px 0;">', unsafe_allow_html=True)
 
-        total = ss["sc"] + ss["si"]
-        acc = (ss["sc"] / total * 100) if total > 0 else 0.0
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric("✓ Correct", ss["sc"])
-        with c2:
-            st.metric("✗ Wrong", ss["si"])
-        with c3:
-            st.metric("Accuracy", f"{acc:.0f}%")
+        if is_rate:
+            rate_sc = ss.get("rate_sc", 0)
+            c1, c2 = st.columns(2)
+            with c1:
+                st.metric("✓ Placements", rate_sc)
+            with c2:
+                st.metric("In Zone", "YES" if ss.get("rate_in_zone") else "NO")
 
-        st.markdown(
-            f'<div style="font-size:15px;color:#545333;line-height:2;margin-top:8px;">'
-            f'N = {DEMO_N_CHOICES} pieces &nbsp;·&nbsp; log₂(N) = {DEMO_LOG2_N:.1f}<br>'
-            f'Trials: {len(trials)} &nbsp;·&nbsp; Elapsed: {int(elapsed)}s<br>'
-            f'B = log₂(N) × max(Sc−Si, 0) / t'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+            st.markdown(
+                f'<div style="font-size:15px;color:#545333;line-height:2;margin-top:8px;">'
+                f'N = {DEMO_N_CHOICES} pieces &nbsp;·&nbsp; log₂(N) = {DEMO_LOG2_N:.1f}<br>'
+                f'Elapsed: {int(elapsed)}s &nbsp;·&nbsp; Sc = {rate_sc}<br>'
+                f'B = log₂(N) × Sc / t<br>'
+                f'<span style="font-size:13px;opacity:0.7;">'
+                f'Zone: center ±{RATE_ZONE_RADIUS:.1f} sq &nbsp;·&nbsp; '
+                f'Gripper ≥{int(RATE_GRIPPER_MIN*100)}% open</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            total = ss["sc"] + ss["si"]
+            acc = (ss["sc"] / total * 100) if total > 0 else 0.0
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("✓ Correct", ss["sc"])
+            with c2:
+                st.metric("✗ Wrong", ss["si"])
+            with c3:
+                st.metric("Accuracy", f"{acc:.0f}%")
 
-        # Trial history
-        if trials:
-            st.markdown("##### Trial History")
-            for i, trial in enumerate(trials):
-                icon = "✓" if trial["correct"] else "✗"
-                sym = DEMO_PIECE_SYMBOLS[trial["piece"]]
-                st.markdown(
-                    f'<div style="font-size:15px;color:#545333;">'
-                    f'{icon} &nbsp;{sym} {trial["piece"]} — {trial["time"]:.1f}s'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown(
+                f'<div style="font-size:15px;color:#545333;line-height:2;margin-top:8px;">'
+                f'N = {DEMO_N_CHOICES} pieces &nbsp;·&nbsp; log₂(N) = {DEMO_LOG2_N:.1f}<br>'
+                f'Trials: {len(trials)} &nbsp;·&nbsp; Elapsed: {int(elapsed)}s<br>'
+                f'B = log₂(N) × max(Sc−Si, 0) / t'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            # Trial history
+            if trials:
+                st.markdown("##### Trial History")
+                for i, trial in enumerate(trials):
+                    icon = "✓" if trial["correct"] else "✗"
+                    sym = DEMO_PIECE_SYMBOLS[trial["piece"]]
+                    st.markdown(
+                        f'<div style="font-size:15px;color:#545333;">'
+                        f'{icon} &nbsp;{sym} {trial["piece"]} — {trial["time"]:.1f}s'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
 
         # End session button (Demo Day has no timer — user ends manually)
         st.markdown('<hr style="margin:12px 0;">', unsafe_allow_html=True)
@@ -1101,18 +1226,26 @@ ss = st.session_state
 
 if not ss["session_running"] and not ss["session_ended"]:
     is_demo = ss.get("game_mode") == "Demo Day"
+    is_rate = ss.get("demo_bit_mode") == "Rate"
+    if is_demo and is_rate:
+        title = "DEMO DAY — RATE MODE"
+    elif is_demo:
+        title = "DEMO DAY — PIECE PICK"
+    else:
+        title = "NEURAL BCI DEMO"
     st.markdown(
         '<div style="text-align:center;margin-top:10px;">'
         '<p style="font-family:VT323,monospace;font-size:32px;color:#545333;margin:0;">'
-        f'{"DEMO DAY — PIECE PICK" if is_demo else "NEURAL BCI DEMO"}</p>'
+        f'{title}</p>'
         '</div>',
         unsafe_allow_html=True,
     )
-    subtitle = (
-        'pick the prompted piece &nbsp;·&nbsp; place it on the board &nbsp;·&nbsp; confirm each trial'
-        if is_demo else
-        'configure in the sidebar &nbsp;·&nbsp; press START to begin a 60-second session'
-    )
+    if is_demo and is_rate:
+        subtitle = 'automatic detection &nbsp;·&nbsp; arm position + gripper &nbsp;·&nbsp; press END to finish'
+    elif is_demo:
+        subtitle = 'pick the prompted piece &nbsp;·&nbsp; place it on the board &nbsp;·&nbsp; confirm each trial'
+    else:
+        subtitle = 'configure in the sidebar &nbsp;·&nbsp; press START to begin a 60-second session'
     st.markdown(
         f'<p class="welcome-sub">{subtitle}</p>',
         unsafe_allow_html=True,
@@ -1132,6 +1265,7 @@ if ss["session_ended"]:
     final_sc  = ss.get("final_sc", ss["sc"])
     final_si  = ss.get("final_si", ss["si"])
     is_demo   = ss.get("game_mode") == "Demo Day"
+    is_rate   = ss.get("demo_bit_mode") == "Rate"
 
     st.markdown(
         '<div class="frozen-banner">✦ SESSION COMPLETE — RESULTS FROZEN ✦</div>',
@@ -1141,8 +1275,6 @@ if ss["session_ended"]:
     col_result, col_info = st.columns([1, 1], gap="large")
 
     with col_result:
-        total = final_sc + final_si
-        acc   = (final_sc / total * 100) if total > 0 else 0.0
         st.markdown(
             '<div class="final-bps-label">FINAL BIT RATE</div>'
             f'<div style="text-align:center;margin:6px 0;">'
@@ -1151,20 +1283,47 @@ if ss["session_ended"]:
             '<div class="final-bps-label">bits / sec</div>',
             unsafe_allow_html=True,
         )
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric("✓ Correct", final_sc)
-        with c2:
-            st.metric("✗ Wrong", final_si)
-        with c3:
-            st.metric("Accuracy", f"{acc:.0f}%")
+        if is_demo and is_rate:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.metric("✓ Placements", final_sc)
+            with c2:
+                duration = ss.get("final_duration", 0)
+                st.metric("Duration", f"{int(duration)}s")
+        else:
+            total = final_sc + final_si
+            acc   = (final_sc / total * 100) if total > 0 else 0.0
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("✓ Correct", final_sc)
+            with c2:
+                st.metric("✗ Wrong", final_si)
+            with c3:
+                st.metric("Accuracy", f"{acc:.0f}%")
 
     with col_info:
-        if is_demo:
+        if is_demo and is_rate:
+            duration = ss.get("final_duration", 0)
+            rate_sc = ss.get("rate_sc", 0)
+            st.markdown(
+                f'<div style="font-size:17px;color:#545333;line-height:2;">'
+                f'Mode: Rate (automatic)<br>'
+                f'N = {DEMO_N_CHOICES} pieces<br>'
+                f'log₂(N) = {DEMO_LOG2_N:.1f} bits/correct<br>'
+                f'Formula: B = log₂(N) × Sc / t<br>'
+                f'Sc = {rate_sc} &nbsp;·&nbsp; Duration: {int(duration)}s<br>'
+                f'<span style="font-size:13px;opacity:0.7;">'
+                f'Zone: center ±{RATE_ZONE_RADIUS:.1f} sq &nbsp;·&nbsp; '
+                f'Gripper ≥{int(RATE_GRIPPER_MIN*100)}% open</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        elif is_demo:
             duration = ss.get("final_duration", 0)
             trials = ss.get("demo_trials", [])
             st.markdown(
                 f'<div style="font-size:17px;color:#545333;line-height:2;">'
+                f'Mode: Demo Day (manual)<br>'
                 f'N = {DEMO_N_CHOICES} pieces<br>'
                 f'log₂(N) = {DEMO_LOG2_N:.1f} bits/correct<br>'
                 f'Formula: B = log₂(N)×max(Sc−Si,0)/t<br>'

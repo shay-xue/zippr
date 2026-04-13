@@ -17,7 +17,7 @@ USE_MOCK_DECODER: bool = os.getenv("USE_MOCK_DECODER", "true").lower() in ("1", 
 USE_REAL_ARM: bool = os.getenv("USE_REAL_ARM", "false").lower() in ("1", "true", "yes")
 
 # ── SciFi device (live mode) ─────────────────────────────────────────────────
-SCIFI_DEVICE_IP: str = "192.168.8.123"
+SCIFI_DEVICE_IP: str = "192.168.0.25"
 SYNAPSE_TAP_NAME: str = "joystick_out"
 ARM_API_URL: str = "http://127.0.0.1:8000"
 

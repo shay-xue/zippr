@@ -39,7 +39,7 @@ DROT_SCALE = 25.0     # degrees per unit — wrist roll
 DJAW_SCALE = 10.0     # jaw units per unit — gripper open/close
 
 GATE_THRESHOLD = 0.5  # suppress motion when gate < this
-DEADZONE = 0.02       # ignore joystick values below this magnitude (lowered for simulated data)
+DEADZONE = 0.2       # ignore joystick values below this magnitude
 
 COMMAND_RATE_HZ = 10  # max commands per second to the arm
 

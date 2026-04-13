@@ -8,7 +8,7 @@ from arm.config import ArmSettings
 
 SETTINGS = ArmSettings(
     # Replace with the real serial port for your SO-101 follower arm.
-    port="/dev/tty.usbmodem5A4B0466901",
+    port="/dev/tty.usbmodem5AB01580631",
     robot_id="so101-local",
     # Keep this False during teleop unless you explicitly want interactive calibration.
     calibrate_on_connect=False,
